@@ -108,5 +108,30 @@ class App {
   }
 }
 
+function _check_fps() {
+  let frameCount = 0;
+  let lastCheck = performance.now();
+  let currentFPS = 0;
+  let remainCheck = 5;
+
+  function monitorFPS() {
+    if (remainCheck < 0) return
+    frameCount++;
+    const now = performance.now();
+
+    if (now - lastCheck >= 1000) {
+      currentFPS = frameCount;
+      remainCheck--;
+      console.log(`目前瀏覽器 FPS: ${currentFPS}`);
+      frameCount = 0;
+      lastCheck = now;
+    }
+    requestAnimationFrame(monitorFPS);
+  }
+  monitorFPS();
+}
+
+_check_fps()
+
 // 啟動應用
 new App();

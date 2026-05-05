@@ -168,8 +168,8 @@ export class Kooni {
     ctx.fillRect(4, -35, 8, 8);   // 右眼眶
 
     ctx.fillStyle = "#000";
-    ctx.fillRect(-8, -31, 4, 4);  // 左瞳孔
-    ctx.fillRect(8, -31, 4, 4);   // 右瞳孔
+    ctx.fillRect(-12, -31, 4, 4);  // 左瞳孔
+    ctx.fillRect(4, -31, 4, 4);   // 右瞳孔
 
     // 4. 嘴巴 (怒氣值達到閾值時變為紅色大口)
     const isEnraged = this.rage >= this.rageThreshold - 1;

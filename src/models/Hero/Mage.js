@@ -11,7 +11,7 @@ export class Mage extends BaseHero {
     // 基礎屬性
     this.maxAtk = 25;
     this.maxHp = 80;
-    this.critRate = 0.05;
+    this.critRate =0.05;
     this.pDef = 10;
     this.mRes = 10;
     this.evaRate = 0.03;

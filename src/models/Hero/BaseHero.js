@@ -122,13 +122,14 @@ export class BaseHero {
      * @param {number} targetY 目標 Y 座標
      * @returns {Object|null} 回傳產生的投射物或攻擊數據
      */
-  attack(targetX, targetY) {
+  attack(targetX, targetY, FullCrit = false) {
     // 1. 檢查武器是否準備好 (Cooldown)
     if (!this.weapon || !this.weapon.canAttack()) return null;
 
     // 2. 計算基礎傷害與爆擊
     let finalDamage = (this.maxAtk * this.weapon.damageMultiplier) + this.weapon.addDamage;
-    const isCrit = Math.random() < this.critRate;
+    let isCrit = Math.random() < this.critRate;
+    if (FullCrit) isCrit = true;
 
     if (isCrit) {
       finalDamage *= 1.5; // 爆擊 1.5 倍傷害

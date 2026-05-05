@@ -25,7 +25,7 @@ export class Keyboard {
 
     // 視覺位置 (放在對戰區與鍵盤區中間)
     this.x = CONFIG.width / 2; // 假設畫布寬 800，置中為 400
-    this.y = CONFIG.height * 0.7;
+    this.y = CONFIG.height * 0.75;
 
     // 3. 綁定事件監聽
     this.initEventListeners();

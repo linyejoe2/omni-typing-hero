@@ -42,7 +42,7 @@ export class BattleScene extends Scene {
     this.damageNumbers = []; // 傷害數字
 
     this.shakeTime = 0; // 震動剩餘幀數
-    this.shakeIntensity = 50; // 震動強度
+    this.shakeIntensity = 5; // 震動強度
 
     // 重要：連結鍵盤與輸入邏輯
     this.keyboard.onKeyPress = (char) => {
@@ -50,9 +50,9 @@ export class BattleScene extends Scene {
 
       const result = this.textInput.handleInput(char);
 
-      if (result === "WORD_COMPLETE") {
+      if (result.includes("WORD_COMPLETE")) {
         // 單字完成！英雄發動攻擊
-        const projectile = this.hero.attack(this.monster.x, this.monster.y);
+        const projectile = this.hero.attack(this.monster.x, this.monster.y, result === "WORD_COMPLETE_CRIT");
         if (projectile) this.projectiles.push(projectile);
       } else if (result === "CHAR_WRONG") {
         this.monster.penalizeMiss();
@@ -88,6 +88,7 @@ export class BattleScene extends Scene {
     this.monster.update();
     this.hero.update();
     this.keyboard.update();
+    this.textInput.update();
 
     if (this.monster.isAttacking) {
       this.monster.isAttacking = false;
@@ -115,8 +116,7 @@ export class BattleScene extends Scene {
     this.enemyProjectiles.forEach((pj, index) => {
       const isHit = pj.update(this.enemyProjectiles);
       if (isHit) {
-        // this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
-        // console.log("shakeTime", this.shakeTime)
+        this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
         const dmg = this.hero.takeDamage(this.monster.damage());
 
         this.damageNumbers.push(new DamageNumber(
@@ -172,6 +172,18 @@ export class BattleScene extends Scene {
     ctx.save();
 
     this.drawUI(ctx);
+
+    // BattleScene.js -> draw()
+    if (this.textInput.isFrenzy) {
+      ctx.save();
+      // 簡單的紅色覆蓋濾鏡
+      ctx.fillStyle = "rgba(255, 69, 0, 0.15)";
+      ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
+
+      // 可以在畫面上隨機畫一些火粒子
+      this.drawFrenzyParticles(ctx);
+      ctx.restore();
+    }
 
     // 3. 如果正在震動，對整個畫布進行隨機偏移
     if (this.shakeTime > 0) {
@@ -238,7 +250,7 @@ export class BattleScene extends Scene {
     ctx.restore();
 
     drawCoin(ctx, infoX + 10, infoY + 30)
-    ctx.fillStyle = "#d5d821"; ctx.font = "bold 14px 'Courier New"; ctx.textAlign = "left";
+    ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px 'Courier New"; ctx.textAlign = "left";
     ctx.fillText(`GOLD: ${this.charData.gold}`, infoX + 30, infoY + 35);
 
     // 怪物的血條與反擊條
@@ -261,6 +273,61 @@ export class BattleScene extends Scene {
     ctx.textAlign = "left";
     // 加上 "ATK" 字樣與數值，並稍微往右偏移避開圖示
     ctx.fillText(`ATK: ${this.monster._damage}`, mInfoX + 30, mInfoY + 10);
+  }
+
+  drawFrenzyParticles(ctx) {
+    // 如果沒有粒子陣列，先初始化一個 (專門給狂暴模式用)
+    if (!this.frenzyParticles) this.frenzyParticles = [];
+
+    // 1. 每幀產生新粒子 (產生頻率可以根據需求調整)
+    if (Math.random() > 0.4) {
+      this.frenzyParticles.push({
+        x: Math.random() * ctx.canvas.width,
+        y: CONFIG.groundY + 20, // 從畫面底部下方一點點開始
+        size: Math.random() * 6 + 4,
+        speedY: Math.random() * -4 - 2, // 往上飄的速度
+        speedX: (Math.random() - 0.5) * 2, // 輕微左右晃動
+        life: 1.0, // 生命週期 1.0 -> 0
+        colorType: Math.random() // 用來隨機分配顏色
+      });
+    }
+
+    // 2. 更新與繪製
+    ctx.save();
+    for (let i = this.frenzyParticles.length - 1; i >= 0; i--) {
+      const p = this.frenzyParticles[i];
+
+      // 更新位置
+      p.x += p.speedX;
+      p.y += p.speedY;
+      p.life -= 0.015; // 消失速度
+
+      // 根據生命週期改變顏色 (亮黃 -> 橘紅 -> 深紅)
+      let color;
+      if (p.life > 0.6) {
+        color = "#ffea00"; // 亮黃
+      } else if (p.life > 0.3) {
+        color = "#ff4500"; // 橘紅
+      } else {
+        color = "#8b0000"; // 深紅
+      }
+
+      // 繪製像素粒子
+      ctx.globalAlpha = p.life;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = color;
+      ctx.fillStyle = color;
+
+      // 粒子越往上越小
+      const currentSize = p.size * p.life;
+      ctx.fillRect(p.x, p.y, currentSize, currentSize);
+
+      // 移除死亡粒子
+      if (p.life <= 0) {
+        this.frenzyParticles.splice(i, 1);
+      }
+    }
+    ctx.restore();
   }
 
   drawGameOver(ctx) {
