@@ -171,8 +171,6 @@ export class BattleScene extends Scene {
     // 3. 繪製底部的虛擬鍵盤
     this.keyboard.draw(ctx);
 
-    // 這裡你需要持有 hero, monster 等物件的引用才能畫出它們
-    // 或者從 GameController 傳進來
     ctx.restore(); // --- 重要：結束後還原狀態，避免影響下一幀 ---
   }
 
@@ -193,13 +191,36 @@ export class BattleScene extends Scene {
 
     // 怪物的血條與反擊條
     const bw = 200;
+    const mInfoX = 550; // 與血條對齊
+    const mInfoY = 58;  // Rage Bar 下方的起始高度
     // HP Bar
-    ctx.fillStyle = "#333"; ctx.fillRect(550, 25, bw, 12);
-    ctx.fillStyle = "#ff4500"; ctx.fillRect(550, 25, (Math.max(0, this.monster.hp / this.monster.maxHp)) * bw, 12);
+    ctx.fillStyle = "#333"; ctx.fillRect(mInfoX, 25, bw, 12);
+    ctx.fillStyle = "#ff4500"; ctx.fillRect(mInfoX, 25, (Math.max(0, this.monster.hp / this.monster.maxHp)) * bw, 12);
     // Rage Bar (反擊值)
-    ctx.fillStyle = "#222"; ctx.fillRect(550, 42, bw, 6);
-    ctx.fillStyle = "#9400d3"; ctx.fillRect(550, 42, (Math.min(this.monster.rageThreshold, this.monster.rage / this.monster.rageThreshold)) * bw, 6);
-    ctx.strokeStyle = "#d4af37"; ctx.strokeRect(550, 25, bw, 23);
+    ctx.fillStyle = "#222"; ctx.fillRect(mInfoX, 42, bw, 6);
+    ctx.fillStyle = "#9400d3"; ctx.fillRect(mInfoX, 42, (Math.min(this.monster.rageThreshold, this.monster.rage / this.monster.rageThreshold)) * bw, 6);
+    ctx.strokeStyle = "#d4af37"; ctx.strokeRect(mInfoX, 25, bw, 23);
+
+    // 1. 繪製像素小劍圖示
+    ctx.fillStyle = "#aaa"; // 劍身 (銀灰色)
+    ctx.fillRect(mInfoX + 4, mInfoY + 4, 12, 4); // 橫向的劍刃
+    let region = new Path2D();
+    region.moveTo(mInfoX + 16, mInfoY + 4);
+    region.lineTo(mInfoX + 16, mInfoY + 8);
+    region.lineTo(mInfoX + 20, mInfoY + 6);
+    region.closePath();
+    ctx.fill(region, "evenodd"); // 劍尖
+    ctx.fillStyle = "#8b4513"; // 劍柄 (木褐色)
+    ctx.fillRect(mInfoX, mInfoY + 4, 4, 4);
+    ctx.fillStyle = "#d4af37"; // 護手 (金色)
+    ctx.fillRect(mInfoX + 4, mInfoY + 2, 2, 8);
+
+    // 2. 繪製攻擊力文字
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 14px 'Courier New'";
+    ctx.textAlign = "left";
+    // 加上 "ATK" 字樣與數值，並稍微往右偏移避開圖示
+    ctx.fillText(`ATK: ${this.monster.damage}`, mInfoX + 30, mInfoY + 10);
 
     // 單字
     if (!this.isGameOver) {

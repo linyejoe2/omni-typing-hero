@@ -7,6 +7,8 @@ export class Kooni {
     this.maxHp = config.hp || 100;
     this.hp = this.maxHp;
     this.rage = 0;
+    this.damage = 10;
+    // this.mDamage = 5;
     this.rageThreshold = config.rageThreshold || 5;
 
     // 變換屬性 (Transform)
@@ -92,6 +94,8 @@ export class Kooni {
     ctx.translate(drawX, drawY);
     ctx.rotate(this.rotation);
     ctx.globalAlpha = this.opacity;
+
+    // 怒氣
 
     // --- 視覺特效 (發光預警) ---
     if (this.rage >= this.rageThreshold - 1) {
