@@ -71,7 +71,7 @@ export class TextInput {
       ctx.shadowBlur = 4;
 
       let t = word[i]
-      if (word[i] == " ") t = "_"
+      if (word[i] == " " && i < this.typedIndex) t = "_"
 
       ctx.fillText(t, startX + i * letterSpacing, this.y);
     }
