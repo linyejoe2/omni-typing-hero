@@ -4,6 +4,7 @@ import { Kooni } from '../models/Monster/Kooni.js';
 import { Mage } from '../models/Hero/Mage.js';
 import { Keyboard } from '../models/Keyboard.js';
 import { TextInput } from '../models/TextInput.js';
+import { DamageNumber } from '../models/Effect/DamageNumber.js';
 
 export class BattleScene extends Scene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
@@ -39,6 +40,7 @@ export class BattleScene extends Scene {
     this.projectiles = []
     this.enemyProjectiles = []; // 存放所有 EnemyProjectile
     this.particles = []; // 存放拖尾與爆炸粒子
+    this.damageNumbers = []; // 傷害數字
 
     this.shakeTime = 0; // 震動剩餘幀數
     this.shakeIntensity = 50; // 震動強度
@@ -87,6 +89,13 @@ export class BattleScene extends Scene {
         // this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
         console.log("shakeTime", this.shakeTime)
         this.monster.takeDamage(p.damage, p.isCrit); // 怪物受傷
+
+        this.damageNumbers.push(new DamageNumber(
+          this.monster.damageNumberX,
+          this.monster.damageNumberY,
+          p.damage, // 確保 Fireball 有存這項資訊
+          p.isCrit
+        ));
       }
       if (!p.alive) this.projectiles.splice(index, 1);
     });
@@ -98,6 +107,14 @@ export class BattleScene extends Scene {
       // 修正判斷條件：生命值小於等於 0 就移除
       if (p.life <= 0) {
         this.particles.splice(i, 1);
+      }
+    }
+
+    // 2. 更新傷害數字
+    for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
+      this.damageNumbers[i].update();
+      if (this.damageNumbers[i].life <= 0) {
+        this.damageNumbers.splice(i, 1);
       }
     }
 
@@ -142,6 +159,8 @@ export class BattleScene extends Scene {
 
     // 畫投射物
     this.projectiles.forEach(p => p.draw(ctx));
+
+    this.damageNumbers.forEach(num => num.draw(ctx));
 
     // 畫粒子 (粒子通常在最上層，或是怪物後方，視你喜好決定順序)
     this.particles.forEach(p => p.draw(ctx));

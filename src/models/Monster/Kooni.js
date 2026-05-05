@@ -1,5 +1,3 @@
-import { DamageNumber } from "../Effect/DamageNumber.js";
-
 /**
  * 怪物類別: Kooni (小鬼)
  */
@@ -22,8 +20,9 @@ export class Kooni {
     this.shakeTime = 0;
     this.shakeIntensity = 50; // 震動強度
     this.floatOffset = 0; // 用於平滑浮動效果
+    this.damageNumberX = this.x + 25;
+    this.damageNumberY = this.y - 30;
 
-    this.damageNumbers = [];
   }
 
   /**
@@ -42,26 +41,12 @@ export class Kooni {
       this.status = 'DYING';
     }
     this.shakeTime = 8;
-
-    this.damageNumbers.push(new DamageNumber(
-      this.x + 30,
-      this.y - 30,
-      damage, // 確保 Fireball 有存這項資訊
-      isCrit
-    ));
   }
 
   /**
    * 每幀更新邏輯
    */
   update() {
-    // 2. 更新傷害數字
-    for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
-      this.damageNumbers[i].update();
-      if (this.damageNumbers[i].life <= 0) {
-        this.damageNumbers.splice(i, 1);
-      }
-    }
 
     if (this.status === 'DEAD') return;
 
@@ -93,10 +78,6 @@ export class Kooni {
     if (this.status === 'DEAD') return
 
     ctx.save();
-
-    this.damageNumbers.forEach(num => num.draw(ctx));
-
-    // if (this.status === 'DEAD') return ctx.restore();
 
     // 基礎座標偏移 (包含平滑浮動)
     let drawX = this.x;
