@@ -7,6 +7,7 @@ import { TextInput } from '../models/TextInput.js';
 import { DamageNumber } from '../models/Effect/DamageNumber.js';
 import { drawSword } from '../models/Icon/Sword.js';
 import { drawCoin } from '../models/Icon/Coin.js';
+import { EnemyFireball } from "../models/Projectile/EnemyFireball.js"
 
 export class BattleScene extends Scene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
@@ -23,18 +24,14 @@ export class BattleScene extends Scene {
     this.hearts = CONFIG.maxHearts;
     this.gold = 0;
     this.isGameOver = false;
+    this.restartTimer = 60;
     this.monster = { hp: CONFIG.monsterMaxHP, rage: 0 };
     this.currentWord = "";
     this.typedIndex = 0;
     this.lastKeyPressed = "";
 
-    this.hero = this.createHero(charData);
-    this.monster = new Kooni({
-      hp: 100,
-      x: 650,
-      y: CONFIG.groundY - 20,
-      rageThreshold: 5
-    });
+    this.hero = this.createHero();
+    this.monster = this.createMonster();
     this.monsterRebirthCountDown = 15;
 
     this.textInput = new TextInput();
@@ -49,25 +46,37 @@ export class BattleScene extends Scene {
 
     // 重要：連結鍵盤與輸入邏輯
     this.keyboard.onKeyPress = (char) => {
+      if (this.isGameOver) this.resetGame();
+
       const result = this.textInput.handleInput(char);
 
       if (result === "WORD_COMPLETE") {
         // 單字完成！英雄發動攻擊
         const projectile = this.hero.attack(this.monster.x, this.monster.y);
         if (projectile) this.projectiles.push(projectile);
-      } else if (result === "RESTART") {
-        this.resetGame();
+      } else if (result === "CHAR_WRONG") {
+        this.monster.penalizeMiss();
       }
     };
 
   }
 
-  createHero(data) {
+  createHero() {
+    const data = { ...this.charData, onDeath: this.onDeath.bind(this) };
     switch (data.job) {
       case 'MAGE': return new Mage(data);
       // case 'SWORDSMAN': return new Swordsman(data);
       default: return new Mage(data); // 預設
     }
+  }
+
+  createMonster() {
+    return new Kooni({
+      hp: 100,
+      x: 650,
+      y: CONFIG.groundY - 20,
+      rageThreshold: 50
+    });
   }
 
   // 1. 邏輯更新：處理物理、碰撞、計數
@@ -80,26 +89,43 @@ export class BattleScene extends Scene {
     this.hero.update();
     this.keyboard.update();
 
-    if (this.hero.hp <= 0) {
-      this.textInput.isGameOver = true;
+    if (this.monster.isAttacking) {
+      this.monster.isAttacking = false;
+      this.enemyProjectiles.push(new EnemyFireball(this.monster.x, this.monster.y - 30, this.hero.x, this.hero.y));
     }
 
     // 更新所有投射物的位移
-    this.projectiles.forEach((p, index) => {
-      const isHit = p.update(this.particles);
+    this.projectiles.forEach((pj, index) => {
+      const isHit = pj.update(this.particles);
       if (isHit) {
         // this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
-        console.log("shakeTime", this.shakeTime)
-        this.monster.takeDamage(p.damage, p.isCrit); // 怪物受傷
+        this.monster.takeDamage(pj.damage, pj.isCrit); // 怪物受傷
 
         this.damageNumbers.push(new DamageNumber(
           this.monster.damageNumberX,
           this.monster.damageNumberY,
-          p.damage, // 確保 Fireball 有存這項資訊
-          p.isCrit
+          pj.damage, // 確保 Fireball 有存這項資訊
+          pj.isCrit
         ));
       }
-      if (!p.alive) this.projectiles.splice(index, 1);
+      if (!pj.alive) this.projectiles.splice(index, 1);
+    });
+
+    // 更新所有敵人投射物的位移
+    this.enemyProjectiles.forEach((pj, index) => {
+      const isHit = pj.update(this.enemyProjectiles);
+      if (isHit) {
+        // this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
+        // console.log("shakeTime", this.shakeTime)
+        const dmg = this.hero.takeDamage(this.monster.damage);
+
+        this.damageNumbers.push(new DamageNumber(
+          this.hero.x - 25,
+          this.hero.y - 30,
+          dmg
+        ));
+      }
+      if (!pj.alive) this.enemyProjectiles.splice(index, 1);
     });
 
     // 2. 統一更新粒子
@@ -128,13 +154,12 @@ export class BattleScene extends Scene {
     // 怪物重生
     if (this.monster.status == "DEAD") this.monsterRebirthCountDown--;
     if (this.monsterRebirthCountDown <= 0) {
-      this.monster = new Kooni({
-        hp: 100,
-        x: 650,
-        y: CONFIG.groundY - 20,
-        rageThreshold: 5
-      });
+      this.monster = this.createMonster();
       this.monsterRebirthCountDown = 15;
+    }
+
+    if (this.isGameOver && this.restartTimer) {
+      this.restartTimer--
     }
   }
 
@@ -161,7 +186,9 @@ export class BattleScene extends Scene {
 
     // 畫投射物
     this.projectiles.forEach(p => p.draw(ctx));
+    this.enemyProjectiles.forEach(p => p.draw(ctx));
 
+    // 繪製傷害數字
     this.damageNumbers.forEach(num => num.draw(ctx));
 
     // 畫粒子 (粒子通常在最上層，或是怪物後方，視你喜好決定順序)
@@ -173,18 +200,42 @@ export class BattleScene extends Scene {
     // 3. 繪製底部的虛擬鍵盤
     this.keyboard.draw(ctx);
 
+    if (this.isGameOver) this.drawGameOver(ctx)
+
     ctx.restore(); // --- 重要：結束後還原狀態，避免影響下一幀 ---
   }
 
   drawUI(ctx) {
     // 血條 金錢
     const bw = 200;
+    const bh = 16;
     const infoX = 50; // 與血條對齊
     const infoY = 25;  // Rage Bar 下方的起始高度
 
-    ctx.fillStyle = "#333"; ctx.fillRect(infoX, infoY, bw, 12);
-    ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.hp / this.hero.maxHp)) * bw, 12);
-    ctx.strokeStyle = "#d4af37"; ctx.strokeRect(infoX, infoY, bw, 12);
+    ctx.fillStyle = "#333"; ctx.fillRect(infoX, infoY, bw, bh);
+    ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.hp / this.hero.maxHp)) * bw, bh);
+    ctx.strokeStyle = "#d4af37"; ctx.strokeRect(infoX, infoY, bw, bh);
+    // 繪製血量文字 (置中)
+    ctx.save();
+    ctx.fillStyle = "#fff"; // 文字顏色
+    ctx.font = "bold 10px Arial"; // 根據 bh 調整字體大小
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // 設定文字在血條的正中央
+    const textX = infoX + bw / 2;
+    const textY = infoY + bh / 2 + 1; // +1 是為了視覺上的微調補償
+    const hpText = `${Math.ceil(this.hero.hp)} / ${this.hero.maxHp}`;
+
+    // 選擇性：加上深色描邊讓數字更清晰 (防止在紅色背景下看不清楚)
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.lineWidth = 2;
+    ctx.strokeText(hpText, textX, textY);
+
+    // 填充文字本體
+    ctx.fillText(hpText, textX, textY);
+
+    ctx.restore();
 
     drawCoin(ctx, infoX + 10, infoY + 30)
     ctx.fillStyle = "#d5d821"; ctx.font = "bold 14px 'Courier New"; ctx.textAlign = "left";
@@ -194,8 +245,8 @@ export class BattleScene extends Scene {
     const mInfoX = 550; // 與血條對齊
     const mInfoY = 58;  // Rage Bar 下方的起始高度
     // HP Bar
-    ctx.fillStyle = "#333"; ctx.fillRect(mInfoX, 25, bw, 12);
-    ctx.fillStyle = "#ff3300"; ctx.fillRect(mInfoX, 25, (Math.max(0, this.monster.hp / this.monster.maxHp)) * bw, 12);
+    ctx.fillStyle = "#333"; ctx.fillRect(mInfoX, 25, bw, bh);
+    ctx.fillStyle = "#ff3300"; ctx.fillRect(mInfoX, 25, (Math.max(0, this.monster.hp / this.monster.maxHp)) * bw, bh);
     // Rage Bar (反擊值)
     ctx.fillStyle = "#222"; ctx.fillRect(mInfoX, 42, bw, 6);
     ctx.fillStyle = "#9400d3"; ctx.fillRect(mInfoX, 42, (Math.min(this.monster.rageThreshold, this.monster.rage / this.monster.rageThreshold)) * bw, 6);
@@ -210,23 +261,35 @@ export class BattleScene extends Scene {
     ctx.textAlign = "left";
     // 加上 "ATK" 字樣與數值，並稍微往右偏移避開圖示
     ctx.fillText(`ATK: ${this.monster.damage}`, mInfoX + 30, mInfoY + 10);
+  }
 
-    // 單字
-    if (!this.isGameOver) {
-      ctx.textAlign = "center"; ctx.font = "bold 40px 'Courier New'";
-      const word = this.currentWord;
-      const startX = 300 - (word.length * 28) / 2;
-      for (let i = 0; i < word.length; i++) {
-        ctx.fillStyle = i < this.typedIndex ? "#ff4500" : "#555";
-        ctx.fillText(word[i], startX + i * 28, 380);
-      }
-    } else {
-      ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0, 0, 600, 600);
-      ctx.fillStyle = "#ff0000"; ctx.font = "bold 60px 'Courier New'"; ctx.textAlign = "center";
-      ctx.fillText("戰死沙場", 300, 250);
-      ctx.fillStyle = "#fff"; ctx.font = "20px 'Courier New'";
-      ctx.fillText("按下任何鍵重新開始", 300, 320);
-    }
+  drawGameOver(ctx) {
+    // 死亡畫面遮罩
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+    ctx.fillStyle = "#ff0000";
+    ctx.font = "bold 60px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.fillText("戰死沙場", ctx.canvas.width / 2, ctx.canvas.height / 2 - 50);
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "20px 'Courier New'";
+    ctx.fillText("按下任何鍵重新開始", ctx.canvas.width / 2, ctx.canvas.height / 2 + 20);
+    ctx.restore();
+  }
+
+  onDeath() {
+    console.log("onDeath!")
+    this.isGameOver = true;
+  }
+
+  resetGame() {
+    if (this.restartTimer) return
+    this.isGameOver = false;
+    this.restartTimer = 60;
+    this.hero = this.createHero();
+    return
   }
 }

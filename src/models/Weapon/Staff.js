@@ -3,7 +3,7 @@ import { BaseWeapon } from "./BaseWeapon.js";
 
 export class MagicStaff extends BaseWeapon {
   constructor() {
-    super({ name: "法杖", type: "MAGIC", damageMultiplier: 1.15, addDamage: 50 });
+    super({ name: "法杖", type: "MAGIC", damageMultiplier: 1, addDamage: 10 });
 
   }
 

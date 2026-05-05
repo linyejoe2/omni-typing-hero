@@ -1,5 +1,14 @@
 import { CONFIG } from "../../CONST.js";
 
+const rate_multiplier = {
+  STR: 3,
+  CRI: 0.01,
+  VIT: 20,
+  DEF: 2,
+  RES: 2,
+  AGI: 0.015
+}
+
 export class BaseHero {
   constructor(data) {
     this.name = data.nickname || "冒險者";
@@ -19,8 +28,30 @@ export class BaseHero {
     this.decoColor = this.gender === 'FEMALE' ? "#ff99cc" : "#99ccff";
 
     // 基礎等級資訊
-    this.level = data.level || 1;
+    this.level = data.level - 1 || 0;
     this.points = data.points || 0; // 剩餘可分配點數
+
+    // 基礎屬性 (按照劍客設計 最平衡)
+    this.maxAtk = 20;
+    this.maxHp = 100;
+    this.critRate = 0.05;
+    this.pDef = 10;
+    this.mRes = 10;
+    this.evaRate = 0.05;
+
+    /**
+     * 職業成長率 (Growth Rates)
+     * 這是每個職業的「潛力值」。
+     * 例如法師的 ATK 成長率高，而戰士的 HP 成長率高。
+     */
+    this.growthRates = {
+      atk: 2,      // 每級固定增加的攻擊力
+      crit: 0.01,  // 每級固定增加的爆擊率 (0.5%)
+      hp: 10,      // 每級固定增加的血量
+      def: 2,    // 每級固定增加的物防
+      res: 2,    // 每級固定增加的魔防
+      eva: 0.006    // 每級固定增加的閃避率 (0.5%)
+    };
 
     // 2. 玩家手動分配的點數 (決定角色流派：如全敏流、血牛流)
     this.assignedPoints = data.assignedPoints || {
@@ -32,21 +63,12 @@ export class BaseHero {
       AGI: 0  // 敏捷
     };
 
-    /**
-     * 職業成長率 (Growth Rates)
-     * 這是每個職業的「潛力值」。
-     * 例如法師的 ATK 成長率高，而戰士的 HP 成長率高。
-     */
-    this.growthRates = {
-      atk: 2,      // 每級固定增加的攻擊力
-      crit: 0.005,  // 每級固定增加的爆擊率 (0.5%)
-      hp: 12,      // 每級固定增加的血量
-      def: 1.2,    // 每級固定增加的物防
-      res: 1.0,    // 每級固定增加的魔防
-      eva: 0.005    // 每級固定增加的閃避率 (0.5%)
-    };
+    this.onDeath = data.onDeath || (() => { console.warn("BaseHero.onDath() not implemented!") });
 
-    this.updateFinalStats();
+    // this.updateFinalStats();
+
+    // // 重新計算後，確保當前血量補滿
+    // this.hp = this.maxHp;
   }
 
   /**
@@ -55,39 +77,36 @@ export class BaseHero {
   updateFinalStats() {
     // --- 攻擊力計算 (STR 影響) ---
     // 公式：基礎 10 + (等級 * 成長) + (力量點數 * 3)
-    this.maxAtk = 10 + (this.level * this.growthRates.atk) + (this.assignedPoints.STR * 3);
+    this.maxAtk += (this.level * this.growthRates.atk) + (this.assignedPoints.STR * rate_multiplier.STR);
 
     // --- 爆擊率計算 (CRI 影響) ---
     // 公式：基礎 5% + (等級 * 成長) + (會心點數 * 1%)
-    this.critRate = 0.05 + (this.level * this.growthRates.crit) + (this.assignedPoints.CRI * 0.01);
+    this.critRate += (this.level * this.growthRates.crit) + (this.assignedPoints.CRI * rate_multiplier.CRI);
 
     // --- 最大生命值計算 (VIT 影響) ---
     // 公式：基礎 100 + (等級 * 成長) + (體質點數 * 20)
-    this.maxHp = 100 + (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * 20);
+    this.maxHp += (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * rate_multiplier.VIT);
 
     // --- 物理/魔法防禦計算 (DEF/RES 影響) ---
-    this.pDef = 5 + (this.level * this.growthRates.def) + (this.assignedPoints.DEF * 2);
-    this.mRes = 5 + (this.level * this.growthRates.res) + (this.assignedPoints.RES * 2);
+    this.pDef += (this.level * this.growthRates.def) + (this.assignedPoints.DEF * rate_multiplier.DEF);
+    this.mRes += (this.level * this.growthRates.res) + (this.assignedPoints.RES * rate_multiplier.RES);
 
     // --- 閃避率計算 (AGI 影響) ---
     // 公式：基礎 3% + (等級 * 成長) + (敏捷點數 * 1.5%)
     // 設定上限 (Cap) 為 50% 避免無敵
-    const rawEva = 0.03 + (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * 0.015);
-    this.evaRate = Math.min(0.5, rawEva);
-
-    // 初始化當前血量
-    if (!this.hp) this.hp = this.maxHp;
+    const rawEva = (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * rate_multiplier.AGI);
+    this.evaRate += Math.min(0.5, rawEva);
   }
 
-  receiveAttack(monsterAtk) {
+  takeDamage(monsterAtk) {
     // 1. 閃避判定
     if (Math.random() < this.maxEva) {
       console.log("MISS! 閃避成功");
       return "MISS";
     }
 
-    // 2. 減傷判定 (簡單公式：傷害 = 敵攻 - 我防)
-    let finalDamage = monsterAtk - this.maxDef;
+    // 2. 減傷判定 (簡單公式：傷害 = 敵攻 * (1 - (我防 / 1000))
+    let finalDamage = Math.round(monsterAtk * (1 - (this.pDef / 1000)));
     if (finalDamage < 1) finalDamage = 1; // 保底傷害
 
     this.hp -= finalDamage;

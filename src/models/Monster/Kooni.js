@@ -6,13 +6,11 @@ export class Kooni {
     // 基礎屬性
     this.maxHp = config.hp || 100;
     this.hp = this.maxHp;
-    this.rage = 0;
     this.damage = 10;
     // this.mDamage = 5;
-    this.rageThreshold = config.rageThreshold || 5;
 
     // 變換屬性 (Transform)
-    this.x = config.x || 300;
+    this.x = config.x || 650;
     this.y = config.y || 280;
     this.rotation = 0;
     this.opacity = 1.0;
@@ -25,6 +23,14 @@ export class Kooni {
     this.damageNumberX = this.x + 25;
     this.damageNumberY = this.y - 30;
 
+    // 怒氣增長相關
+    this.isAttacking = false;
+    this.rage = 0;
+    this.rageThreshold = config.rageThreshold || 50;
+    this.autoRageTimer = 0;
+    this.autoRageInterval = 10; // 每 60 幀 (約 1 秒) 增加一次
+    this.autoRageAmount = 1;    // 每次增加量
+    this.rageAdder = 10
   }
 
   /**
@@ -46,6 +52,23 @@ export class Kooni {
   }
 
   /**
+   * 外部呼叫：打錯字時大幅增加怒氣
+   */
+  penalizeMiss() {
+    if (this.status !== 'ALIVE') return;
+    this.rage += this.rageAdder; // 打錯字一次加 15 (可根據平衡調整)
+    // this.shakeTime = 5; // 怪物興奮地抖動一下
+    // console.log("怪物嘲諷：打錯字啦！怒氣上升！");
+  }
+  
+  attack() {
+    // 怒氣滿了後的行為，例如清空怒氣並對玩家造成傷害
+    // console.log("怪物發動反擊！");
+    this.rage = 0;
+    this.isAttacking = true;
+  }
+
+  /**
    * 每幀更新邏輯
    */
   update() {
@@ -61,6 +84,21 @@ export class Kooni {
         this.opacity = 0;
       }
       return;
+    }
+
+    if (this.status === 'ALIVE') {
+      // 1. 隨時間慢慢增加怒氣
+      this.autoRageTimer++;
+      if (this.autoRageTimer >= this.autoRageInterval) {
+        this.rage += this.autoRageAmount;
+        this.autoRageTimer = 0;
+      }
+
+      // 2. 確保怒氣不超過閾值 (除非你要觸發反擊)
+      if (this.rage > this.rageThreshold) {
+        this.rage = this.rageThreshold;
+        this.attack(); // 這裡可以觸發反擊邏輯
+      }
     }
 
     // 2. 處理震動倒數
@@ -98,8 +136,8 @@ export class Kooni {
     // 怒氣
 
     // --- 視覺特效 (發光預警) ---
-    if (this.rage >= this.rageThreshold - 1) {
-      ctx.shadowBlur = 20;
+    if (this.rage >= (this.rageThreshold * 0.7)) {
+      ctx.shadowBlur = (this.rage - (this.rageThreshold * 0.7)) * 3;
       ctx.shadowColor = "#9400d3";
     }
 

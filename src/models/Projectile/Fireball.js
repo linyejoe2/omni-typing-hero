@@ -15,12 +15,12 @@ export class Fireball {
     this.alive = true;
     this.damage = damage;
     this.isCrit = isCrit;
+    this.color = "#ff4500";
 
     // 計算向量
     const angle = Math.atan2(targetY - startY, targetX - startX);
     this.vx = Math.cos(angle) * this.speed;
     this.vy = Math.sin(angle) * this.speed;
-
   }
 
   /**
@@ -32,7 +32,7 @@ export class Fireball {
 
     // 產生拖尾粒子
     if (Math.random() > 0.3) {
-      particlePool.push(new Particle(this.x, this.y, "#ff4500", 0.5));
+      particlePool.push(new Particle(this.x, this.y, this.color, 0.5));
     }
 
     // 檢查是否抵達目標點 (距離小於閾值)
@@ -49,7 +49,7 @@ export class Fireball {
   }
 
   draw(ctx) {
-    ctx.fillStyle = "#ff4500";
+    ctx.fillStyle = this.color;
     // 像素風格火球 (稍微大一點的矩形)
     ctx.fillRect(this.x - 6, this.y - 6, 12, 12);
     // 加個核心白色
@@ -62,7 +62,7 @@ export class Fireball {
      */
   triggerExplosion(particlePool) {
     for (let i = 0; i < 15; i++) {
-      particlePool.push(new Particle(this.targetX, this.targetY, "#ff4500", 1.2));
+      particlePool.push(new Particle(this.targetX, this.targetY, this.color, 1.2));
     }
   }
 }

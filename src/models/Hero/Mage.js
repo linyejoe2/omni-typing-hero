@@ -8,6 +8,14 @@ export class Mage extends BaseHero {
     this.weapon = new MagicStaff();
     this.floatOffset = 0;
 
+    // 基礎屬性
+    this.maxAtk = 25;
+    this.maxHp = 80;
+    this.critRate = 0.05;
+    this.pDef = 10;
+    this.mRes = 10;
+    this.evaRate = 0.03;
+
     /**
     * 職業成長率 (Growth Rates)
     * 這是每個職業的「潛力值」。
@@ -19,8 +27,13 @@ export class Mage extends BaseHero {
       hp: 5,      // 每級固定增加的血量
       def: 0.2,    // 每級固定增加的物防
       res: 0.5,    // 每級固定增加的魔防
-      eva: 0.005    // 每級固定增加的閃避率 (0.5%)
+      eva: 0.006    // 每級固定增加的閃避率 (0.5%)
     };
+
+    this.updateFinalStats();
+
+    // 重新計算後，確保當前血量補滿
+    this.hp = this.maxHp;
   }
 
   update() {
