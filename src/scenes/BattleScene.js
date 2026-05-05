@@ -195,10 +195,10 @@ export class BattleScene extends Scene {
     const bw = 200;
     // HP Bar
     ctx.fillStyle = "#333"; ctx.fillRect(550, 25, bw, 12);
-    ctx.fillStyle = "#ff4500"; ctx.fillRect(550, 25, (this.monster.hp / this.monster.maxHp) * bw, 12);
+    ctx.fillStyle = "#ff4500"; ctx.fillRect(550, 25, (Math.max(0, this.monster.hp / this.monster.maxHp)) * bw, 12);
     // Rage Bar (反擊值)
     ctx.fillStyle = "#222"; ctx.fillRect(550, 42, bw, 6);
-    ctx.fillStyle = "#9400d3"; ctx.fillRect(550, 42, (this.monster.rage / this.monster.rageThreshold) * bw, 6);
+    ctx.fillStyle = "#9400d3"; ctx.fillRect(550, 42, (Math.min(this.monster.rageThreshold, this.monster.rage / this.monster.rageThreshold)) * bw, 6);
     ctx.strokeStyle = "#d4af37"; ctx.strokeRect(550, 25, bw, 23);
 
     // 單字
