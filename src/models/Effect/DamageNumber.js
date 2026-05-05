@@ -2,7 +2,8 @@ export class DamageNumber {
     constructor(x, y, value, isCrit = false) {
         this.x = x + (Math.random() - 0.5) * 20; // 稍微隨機偏移，避免數字重疊
         this.y = y - 20;
-        this.value = Math.floor(value);
+        // this.value = Math.floor(value);
+        this.value = value;
         this.isCrit = isCrit;
         
         this.life = 1.0;         // 生命週期 (1.0 -> 0)

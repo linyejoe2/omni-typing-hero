@@ -72,7 +72,7 @@ export class BattleScene extends Scene {
 
   createMonster() {
     return new Kooni({
-      hp: 100,
+      hp: 1000,
       x: 650,
       y: CONFIG.groundY - 20,
       rageThreshold: 50
@@ -117,7 +117,7 @@ export class BattleScene extends Scene {
       if (isHit) {
         // this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
         // console.log("shakeTime", this.shakeTime)
-        const dmg = this.hero.takeDamage(this.monster.damage);
+        const dmg = this.hero.takeDamage(this.monster.damage());
 
         this.damageNumbers.push(new DamageNumber(
           this.hero.x - 25,
@@ -260,7 +260,7 @@ export class BattleScene extends Scene {
     ctx.font = "bold 14px 'Courier New'";
     ctx.textAlign = "left";
     // 加上 "ATK" 字樣與數值，並稍微往右偏移避開圖示
-    ctx.fillText(`ATK: ${this.monster.damage}`, mInfoX + 30, mInfoY + 10);
+    ctx.fillText(`ATK: ${this.monster._damage}`, mInfoX + 30, mInfoY + 10);
   }
 
   drawGameOver(ctx) {

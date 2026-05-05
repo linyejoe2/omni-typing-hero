@@ -6,7 +6,8 @@ export class Kooni {
     // 基礎屬性
     this.maxHp = config.hp || 100;
     this.hp = this.maxHp;
-    this.damage = 10;
+    this._damage = 10;
+    this.damageBuzz = 5;
     // this.mDamage = 5;
 
     // 變換屬性 (Transform)
@@ -31,6 +32,11 @@ export class Kooni {
     this.autoRageInterval = 10; // 每 60 幀 (約 1 秒) 增加一次
     this.autoRageAmount = 1;    // 每次增加量
     this.rageAdder = 10
+  }
+
+  damage() {
+    const r = 1 - (Math.random() * 2)
+    return Math.round(this._damage + r * this.damageBuzz)
   }
 
   /**
@@ -60,7 +66,7 @@ export class Kooni {
     // this.shakeTime = 5; // 怪物興奮地抖動一下
     // console.log("怪物嘲諷：打錯字啦！怒氣上升！");
   }
-  
+
   attack() {
     // 怒氣滿了後的行為，例如清空怒氣並對玩家造成傷害
     // console.log("怪物發動反擊！");

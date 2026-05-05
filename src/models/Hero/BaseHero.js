@@ -95,12 +95,12 @@ export class BaseHero {
     // 公式：基礎 3% + (等級 * 成長) + (敏捷點數 * 1.5%)
     // 設定上限 (Cap) 為 50% 避免無敵
     const rawEva = (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * rate_multiplier.AGI);
-    this.evaRate += Math.min(0.5, rawEva);
+    this.evaRate += Math.min(0.8, rawEva);
   }
 
   takeDamage(monsterAtk) {
     // 1. 閃避判定
-    if (Math.random() < this.maxEva) {
+    if (Math.random() < this.evaRate) {
       console.log("MISS! 閃避成功");
       return "MISS";
     }

@@ -3,7 +3,8 @@ import { fetchNewWord } from "../services/randomWordAPI.js";
 
 export class TextInput {
   constructor(config = {}) {
-    this.currentWord = "START";
+    this.wordList = ["START", "Fire Ball", "Magic", "Crystal", "Dragon", "Knight", "Castle", "OMNI", "Typing", "HERO"];
+    this.currentWord = this.wordList.shift();
     this.typedIndex = 0;
 
     // 視覺位置 (放在對戰區與鍵盤區中間)
@@ -19,10 +20,11 @@ export class TextInput {
    * 你可以根據需求修改這個來源 (API 或 本地詞庫)
    */
   async _fetchNewWord() {
-    const words = ["FIREBALL", "MAGIC", "CRYSTAL", "DRAGON", "KNIGHT", "CASTLE", "POTION"];
-    this.currentWord = await fetchNewWord() || words[Math.floor(Math.random() * words.length)];
-    // this.currentWord = "a";
+    this.currentWord = this.wordList.shift();
     this.typedIndex = 0;
+    while (this.wordList.length < 5) {
+      this.wordList.push(await fetchNewWord());
+    }
   }
 
   /**
@@ -31,7 +33,7 @@ export class TextInput {
    * @returns {string|boolean} 回傳結果類型供 Scene 觸發效果
    */
   handleInput(char) {
-    const expectedChar = this.currentWord[this.typedIndex].toUpperCase();
+    const expectedChar = this.currentWord[this.typedIndex];
 
     if (char === expectedChar) {
       this.typedIndex++;
@@ -55,20 +57,23 @@ export class TextInput {
     ctx.textAlign = "center";
     ctx.font = "bold 40px 'Courier New'";
 
-    const word = this.currentWord;
+    let word = this.currentWord;
     const letterSpacing = 28;
     const totalWidth = word.length * letterSpacing;
     const startX = this.x - totalWidth / 2 + letterSpacing / 2;
 
     for (let i = 0; i < word.length; i++) {
       // 已打過的字用橘紅色，未打的用灰色
-      ctx.fillStyle = i < this.typedIndex ? "#ff4500" : "#555";
+      ctx.fillStyle = i < this.typedIndex ? "#70c947" : "#555";
 
       // 加上一點文字陰影增加立體感
       ctx.shadowColor = "rgba(0,0,0,0.5)";
       ctx.shadowBlur = 4;
 
-      ctx.fillText(word[i], startX + i * letterSpacing, this.y);
+      let t = word[i]
+      if (word[i] == " ") t = "_"
+
+      ctx.fillText(t, startX + i * letterSpacing, this.y);
     }
     ctx.restore();
   }

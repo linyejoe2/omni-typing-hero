@@ -4,11 +4,21 @@ export class Keyboard {
   constructor() {
     // 1. 儲存按鍵狀態與動畫進度
     this.keys = {}; // 格式: { 'A': { pressed: false, alpha: 0 } }
-    this.rows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+    this.upperRows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+    this.lowerRows = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+    this.rows = this.lowerRows
     this.lastKeyPressed = null;
 
-    // 2. 初始化按鍵資料結構
-    this.rows.join('').split('').forEach(char => {
+
+
+    this.isShift = false;
+    this.isCaps = false;
+
+    // 初始化所有字母鍵與特殊鍵
+    const allChars = [...this.upperRows.join(''), ...this.lowerRows.join('')
+      // ];
+      , 'Shift', 'CapsLock'];
+    allChars.forEach(char => {
       this.keys[char] = { pressed: false, animation: 0 };
     });
 
@@ -24,7 +34,22 @@ export class Keyboard {
   initEventListeners() {
     window.addEventListener('keydown', (e) => {
       if (!e.key) return;
-      const char = e.key.toUpperCase();
+      const char = e.key;
+
+      // 處理 Shift 邏輯
+      if (char === "Shift") {
+        this.isShift = true;
+        this.updateKeyboardCase();
+        return
+      }
+
+      // 處理 CapsLock 邏輯 (Toggle 開關)
+      if (char === "CapsLock") {
+        this.isCaps = !this.isCaps;
+        this.updateKeyboardCase();
+        return
+      }
+
       if (this.keys[char]) {
         this.keys[char].pressed = true;
         this.keys[char].animation = 1.0; // 動態啟動 (1.0 代表 100% 亮度)
@@ -33,15 +58,34 @@ export class Keyboard {
       if (this.onKeyPress) {
         this.onKeyPress(char);
       }
+
     });
 
     window.addEventListener('keyup', (e) => {
       if (!e.key) return;
-      const char = e.key.toUpperCase();
+      const char = e.key;
+
+      if (char === "Shift") {
+        this.isShift = false;
+      }
       if (this.keys[char]) {
         this.keys[char].pressed = false;
       }
+
+      this.updateKeyboardCase();
     });
+  }
+
+  /**
+ * 判斷當前應該顯示大寫還是小寫
+ */
+  updateKeyboardCase() {
+    // 邏輯：Shift 與 CapsLock 異或 (XOR) 會決定大小寫
+    // 如果 Shift 按住且 Caps 沒開 -> 大寫
+    // 如果 Shift 沒按且 Caps 有開 -> 大寫
+    // 如果 兩個都開 -> 小寫 (這是一般鍵盤行為)
+    const isUpper = this.isShift !== this.isCaps;
+    this.rows = isUpper ? this.upperRows : this.lowerRows;
   }
 
   /**
@@ -64,10 +108,41 @@ export class Keyboard {
     ctx.save();
     ctx.textAlign = "center";
 
+    const keySize = 35;
+    const spacing = 10;
+
+    // --- 繪製 CapsLock 和 Shift (放在鍵盤左側) ---
+    const specialKeys = [
+      { char: "CapsLock", label: "Caps", yOff: 1, active: this.isCaps },
+      { char: "Shift", label: "Shift", yOff: 2, active: this.isShift }
+    ];
+
+    specialKeys.forEach(sk => {
+      const x = (this.x) - (this.rows[0].length * (keySize + spacing) / 2) - 60;
+      const y = this.y + sk.yOff * (keySize + spacing);
+      const state = this.keys[sk.char];
+
+      // 背景與高亮
+      ctx.fillStyle = sk.active ? "#ff4500" : "#1a1a1a";
+      ctx.fillRect(x, y, 50, keySize);
+
+      if (state.animation > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${state.animation * 0.3})`;
+        ctx.fillRect(x, y, 50, keySize);
+      }
+
+      // 外框
+      ctx.strokeStyle = state.pressed ? "#fff" : "#8b0000";
+      ctx.strokeRect(x, y, 50, keySize);
+
+      // 文字
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 12px Arial";
+      ctx.fillText(sk.label, x + 25, y + 23);
+    });
+
     this.rows.forEach((row, rIdx) => {
       // 計算每一行置中的起始位置
-      const keySize = 35;
-      const spacing = 10;
       const totalWidth = row.length * (keySize + spacing);
       const xStart = (this.x) - (totalWidth / 2);
       const y = this.y + rIdx * (keySize + spacing); // 調整至畫面底部
@@ -83,16 +158,21 @@ export class Keyboard {
         ctx.fillStyle = `rgba(26, 26, 26, 1)`; // 基礎底色
         ctx.fillRect(x, y, keySize, keySize);
 
+        // --- 繪製外框 ---
+        ctx.strokeStyle = "#8b0000";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, keySize, keySize);
+
         // 動畫高亮層 (使用亮橙色)
         if (opacity > 0) {
           ctx.fillStyle = `rgba(255, 69, 0, ${opacity})`;
           ctx.fillRect(x, y, keySize, keySize);
+
+          ctx.strokeStyle = `rgba(255, 69, 0, ${opacity * 2})`;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, keySize, keySize);
         }
 
-        // --- 繪製外框 ---
-        ctx.strokeStyle = keyState.pressed ? "#ff4500" : "#8b0000";
-        ctx.lineWidth = keyState.pressed ? 2 : 1;
-        ctx.strokeRect(x, y, keySize, keySize);
 
         // --- 繪製文字 ---
         ctx.fillStyle = "#fff";
