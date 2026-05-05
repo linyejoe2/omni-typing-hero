@@ -6,6 +6,7 @@ import { Keyboard } from '../models/Keyboard.js';
 import { TextInput } from '../models/TextInput.js';
 import { DamageNumber } from '../models/Effect/DamageNumber.js';
 import { drawSword } from '../models/Icon/Sword.js';
+import { drawCoin } from '../models/Icon/Coin.js';
 
 export class BattleScene extends Scene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
@@ -185,8 +186,9 @@ export class BattleScene extends Scene {
     ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.hp / this.hero.maxHp)) * bw, 12);
     ctx.strokeStyle = "#d4af37"; ctx.strokeRect(infoX, infoY, bw, 12);
 
-    ctx.fillStyle = "#d4af37"; ctx.font = "20px 'Courier New'"; ctx.textAlign = "left";
-    ctx.fillText(`KOBAN: ${this.charData.gold}`, 30, infoY + 40);
+    drawCoin(ctx, infoX + 10, infoY + 30)
+    ctx.fillStyle = "#d5d821"; ctx.font = "bold 14px 'Courier New"; ctx.textAlign = "left";
+    ctx.fillText(`GOLD: ${this.charData.gold}`, infoX + 30, infoY + 35);
 
     // 怪物的血條與反擊條
     const mInfoX = 550; // 與血條對齊
