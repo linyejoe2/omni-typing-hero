@@ -5,6 +5,7 @@ import { Mage } from '../models/Hero/Mage.js';
 import { Keyboard } from '../models/Keyboard.js';
 import { TextInput } from '../models/TextInput.js';
 import { DamageNumber } from '../models/Effect/DamageNumber.js';
+import { drawSword } from '../models/Icon/Sword.js';
 
 export class BattleScene extends Scene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
@@ -175,45 +176,31 @@ export class BattleScene extends Scene {
   }
 
   drawUI(ctx) {
-    // 生命值 (心形)
-    for (let i = 0; i < CONFIG.maxHearts; i++) {
-      ctx.fillStyle = i < this.hearts ? "#ff4444" : "#333";
-      // 畫一個簡單的像素心
-      const hX = 30 + i * 35;
-      const hY = 70;
-      ctx.fillRect(hX, hY, 10, 10);
-      ctx.fillRect(hX - 5, hY - 5, 10, 10);
-      ctx.fillRect(hX + 5, hY - 5, 10, 10);
-    }
+    // 血條 金錢
+    const bw = 200;
+    const infoX = 50; // 與血條對齊
+    const infoY = 25;  // Rage Bar 下方的起始高度
+
+    ctx.fillStyle = "#333"; ctx.fillRect(infoX, infoY, bw, 12);
+    ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.hp / this.hero.maxHp)) * bw, 12);
+    ctx.strokeStyle = "#d4af37"; ctx.strokeRect(infoX, infoY, bw, 12);
 
     ctx.fillStyle = "#d4af37"; ctx.font = "20px 'Courier New'"; ctx.textAlign = "left";
-    ctx.fillText(`KOBAN: ${this.charData.gold}`, 30, 40);
+    ctx.fillText(`KOBAN: ${this.charData.gold}`, 30, infoY + 40);
 
     // 怪物的血條與反擊條
-    const bw = 200;
     const mInfoX = 550; // 與血條對齊
     const mInfoY = 58;  // Rage Bar 下方的起始高度
     // HP Bar
     ctx.fillStyle = "#333"; ctx.fillRect(mInfoX, 25, bw, 12);
-    ctx.fillStyle = "#ff4500"; ctx.fillRect(mInfoX, 25, (Math.max(0, this.monster.hp / this.monster.maxHp)) * bw, 12);
+    ctx.fillStyle = "#ff3300"; ctx.fillRect(mInfoX, 25, (Math.max(0, this.monster.hp / this.monster.maxHp)) * bw, 12);
     // Rage Bar (反擊值)
     ctx.fillStyle = "#222"; ctx.fillRect(mInfoX, 42, bw, 6);
     ctx.fillStyle = "#9400d3"; ctx.fillRect(mInfoX, 42, (Math.min(this.monster.rageThreshold, this.monster.rage / this.monster.rageThreshold)) * bw, 6);
     ctx.strokeStyle = "#d4af37"; ctx.strokeRect(mInfoX, 25, bw, 23);
 
     // 1. 繪製像素小劍圖示
-    ctx.fillStyle = "#aaa"; // 劍身 (銀灰色)
-    ctx.fillRect(mInfoX + 4, mInfoY + 4, 12, 4); // 橫向的劍刃
-    let region = new Path2D();
-    region.moveTo(mInfoX + 16, mInfoY + 4);
-    region.lineTo(mInfoX + 16, mInfoY + 8);
-    region.lineTo(mInfoX + 20, mInfoY + 6);
-    region.closePath();
-    ctx.fill(region, "evenodd"); // 劍尖
-    ctx.fillStyle = "#8b4513"; // 劍柄 (木褐色)
-    ctx.fillRect(mInfoX, mInfoY + 4, 4, 4);
-    ctx.fillStyle = "#d4af37"; // 護手 (金色)
-    ctx.fillRect(mInfoX + 4, mInfoY + 2, 2, 8);
+    drawSword(ctx, mInfoX, mInfoY)
 
     // 2. 繪製攻擊力文字
     ctx.fillStyle = "#fff";

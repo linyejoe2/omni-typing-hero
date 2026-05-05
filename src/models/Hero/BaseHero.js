@@ -76,7 +76,7 @@ export class BaseHero {
     this.evaRate = Math.min(0.5, rawEva);
 
     // 初始化當前血量
-    if (!this.currentHp) this.currentHp = this.maxHp;
+    if (!this.hp) this.hp = this.maxHp;
   }
 
   receiveAttack(monsterAtk) {
@@ -90,10 +90,10 @@ export class BaseHero {
     let finalDamage = monsterAtk - this.maxDef;
     if (finalDamage < 1) finalDamage = 1; // 保底傷害
 
-    this.currentHp -= finalDamage;
+    this.hp -= finalDamage;
     this.shakeTime = 15;
 
-    if (this.currentHp <= 0) this.onDeath();
+    if (this.hp <= 0) this.onDeath();
     return finalDamage;
   }
 
