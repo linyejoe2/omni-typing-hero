@@ -72,7 +72,7 @@ export class BattleScene extends Scene {
 
   createMonster() {
     return new Kooni({
-      hp: 10,
+      hp: 1000,
       x: 650,
       y: CONFIG.groundY - 20,
       rageThreshold: 50
@@ -97,10 +97,6 @@ export class BattleScene extends Scene {
 
   // 1. 邏輯更新：處理物理、碰撞、計數
   update() {
-    // 暫時留空，或在這裡呼叫 hero.update()
-    // console.log("BattleScene Updating...");
-    // console.log(this.shakeTime)
-
     this.monster.update();
     this.hero.update();
     this.keyboard.update();
@@ -170,12 +166,6 @@ export class BattleScene extends Scene {
 
     // 怪物死亡
     if (this.monster.status == "DEAD") this.isGameOver = true
-    // if (this.isGameOver && this.monster.status == "DEAD") this.monsterRebirthCountDown--;
-    // if (!this.isGameOver && this.monsterRebirthCountDown <= 0) {
-    //   this.monster.hp = 1
-    //   this.monster = this.createMonster();
-    //   this.monsterRebirthCountDown = 15;
-    // }
 
     if (this.isGameOver && this.restartTimer) {
       this.restartTimer--
@@ -368,6 +358,13 @@ export class BattleScene extends Scene {
 
     this.drawCardData(ctx)
 
+    ctx.font = "bold 30px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
+    ctx.shadowBlur = 15;
+    ctx.fillText("You spend " + this.textInput.totalActiveTime / 1000 + "s", width / 2, height / 2 + 100);
+    ctx.shadowBlur = 0; // 重置陰影
+
     ctx.fillStyle = "#fff";
     ctx.font = "20px 'Courier New'";
     ctx.fillText("Press any key to restart", width / 2, height / 2 + 200);
@@ -392,6 +389,17 @@ export class BattleScene extends Scene {
     ctx.shadowBlur = 0; // 重置陰影
 
     this.drawCardData(ctx)
+
+    ctx.font = "bold 30px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
+    ctx.shadowBlur = 15;
+    ctx.fillText("You fell after " + this.textInput.totalActiveTime / 1000 + "s", width / 2, height / 2 + 100);
+    ctx.shadowBlur = 0; // 重置陰影
+
+    ctx.fillStyle = "#d3d3d3";
+    ctx.font = "12px 'Courier New'";
+    ctx.fillText("Defeat the monster to record your score", width / 2, height / 2 + 150);
 
     ctx.fillStyle = "#fff";
     ctx.font = "20px 'Courier New'";
