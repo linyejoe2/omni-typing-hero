@@ -4,7 +4,7 @@ import { SceneManager } from './scenes/SceneManager.js';
 import { FirebaseService } from './services/firebase.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { CONFIG } from './CONST.js';
-import { AudioManager } from './services/AudioManager.js';
+import { audioManager } from './services/AudioManager.js';
 
 const sceneManager = new SceneManager();
 
@@ -29,21 +29,7 @@ class App {
     this.initEventListeners();
     this.checkAuthState();
 
-    const audio = new AudioManager();
-    const bgmBtn = document.getElementById('bgm-toggle');
-    const bgmStatus = bgmBtn.querySelector('.status');
-
-    bgmBtn.addEventListener('click', () => {
-      const isPlaying = audio.toggle();
-
-      if (isPlaying) {
-        bgmBtn.classList.add('playing');
-        bgmStatus.textContent = 'BGM ON';
-      } else {
-        bgmBtn.classList.remove('playing');
-        bgmStatus.textContent = 'BGM OFF';
-      }
-    });
+    audioManager.init();
   }
 
   // 監聽 Firebase 登入狀態

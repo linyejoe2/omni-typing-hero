@@ -1,5 +1,5 @@
 import { Particle } from "./Particle.js";
-
+import { audioManager } from "../../services/AudioManager.js";
 
 
 /**
@@ -43,6 +43,7 @@ export class Fireball {
     if (dist < 30) {
       this.triggerExplosion(particlePool); // 爆炸時也塞入池子
       this.alive = false;
+      audioManager.play({ type: 'EXPLOSION' });
       return true; // 代表觸發爆炸
     }
     return false;

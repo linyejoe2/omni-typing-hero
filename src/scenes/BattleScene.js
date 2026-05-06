@@ -88,7 +88,7 @@ export class BattleScene extends Scene {
 
     if (this.monster.isAttacking) {
       this.monster.isAttacking = false;
-      this.enemyProjectiles.push(new EnemyFireball(this.monster.x, this.monster.y - 30, this.hero.x, this.hero.y));
+      this.enemyProjectiles.push(new EnemyFireball(this.monster.x, this.monster.y - 30, this.hero.x, this.hero.y - 30));
     }
 
     // 更新所有投射物的位移

@@ -1,4 +1,5 @@
 import { Particle } from "./Particle.js";
+import { audioManager } from "../../services/AudioManager.js";
 
 /**
  * 敵人投射物類別 (由上往下掉落)
@@ -36,6 +37,7 @@ export class EnemyFireball {
     if (dist < 30) {
       this.triggerExplosion(particlePool); // 爆炸時也塞入池子
       this.alive = false;
+      audioManager.play({ type: 'EXPLOSION' });
       return true; // 代表觸發爆炸
     }
     return false;
