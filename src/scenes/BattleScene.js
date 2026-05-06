@@ -110,7 +110,7 @@ export class BattleScene extends Scene {
 
     // 更新所有敵人投射物的位移
     this.enemyProjectiles.forEach((pj, index) => {
-      const isHit = pj.update(this.enemyProjectiles);
+      const isHit = pj.update(this.particles);
       if (isHit) {
         this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
         const dmg = this.hero.takeDamage(this.monster.damage());
