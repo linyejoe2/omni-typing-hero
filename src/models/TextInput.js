@@ -7,14 +7,21 @@ export class TextInput {
     // this.currentWord = this.wordList.shift();
     this.currentWord = "";
     this.typedIndex = 0;
+
+    // 各種統計數值
+    this.startTime = Date.now();
+    this.lastInputTime = Date.now(); // 最後一次按鍵的時間
     this.combo = 0;
     this.wpm = 0;
-    this.typedChars = 0;      // 累計打對的字數（計算 WPM 用）
-    this.startTime = Date.now();
     this.topWpm = 0;
+    this.typedChars = 0;      // 累計打對的字數（計算 WPM 用）
     this.totalActiveTime = 0; // 實際在打字的總毫秒數
-    this.lastInputTime = Date.now(); // 最後一次按鍵的時間
     this.isPaused = true; // 預設暫停，直到第一次按鍵
+    this.totalInputs = 0;      // 總按鍵次數 (正確 + 錯誤)
+    this.correctInputs = 0;    // 正確按鍵次數
+    this.accuracy = 100;       // 平均準確度 (%)
+    this.totalDamage = 0;      // 累計傷害
+    this.dps = 0;              // 每秒傷害
 
     // 視覺位置 (放在對戰區與鍵盤區中間)
     this.x = config.x || CONFIG.width / 2; // 假設畫布寬 800，置中為 400
@@ -52,12 +59,19 @@ export class TextInput {
     const now = Date.now();
     const expectedChar = this.currentWord[this.typedIndex];
 
+    // 無論對錯，總輸入次數都增加
+    this.totalInputs++;
+
     if (char === expectedChar) {
       this.lastInputTime = now;
 
+      this.correctInputs++; // 正確計數增加
       this.typedIndex++;
       this.typedChars++;
       this.combo++;
+
+      // 計算準確度
+      this.updateAccuracy();
 
       // 非狂暴模式下才增加能量
       if (!this.isFrenzy) {
@@ -77,6 +91,10 @@ export class TextInput {
       return "CHAR_CORRECT"; // 觸發小特效
     } else {
       this.combo = 0;
+
+      // 計算準確度
+      this.updateAccuracy();
+
       // 非狂暴模式下才減少能量
       if (!this.isFrenzy) {
         this.energy -= 3; // 每對一字加 2%
@@ -89,13 +107,21 @@ export class TextInput {
     }
   }
 
+  /**
+ * 當 Hero 發射火球或造成傷害時，由外部調用此方法
+ * @param {number} amount 傷害數值
+ */
+  recordDamage(amount) {
+    this.totalDamage += amount;
+  }
+
   triggerFrenzy() {
     this.isFrenzy = true;
     this.frenzyTimer = this.frenzyDuration;
   }
 
   update() {
-    this.updateWpm()
+    this.updateStats()
 
     if (this.isFrenzy) {
       // 狂暴模式：能量條慢慢消退
@@ -109,10 +135,15 @@ export class TextInput {
     }
   }
 
-  updateWpm() {
+  updateStats() {
     const now = Date.now();
     const deltaTime = now - (this.lastFrameTime || now);
     this.lastFrameTime = now;
+
+    const totalSeconds = this.totalActiveTime / 1000;
+
+    // 2. 計算 DPS (總傷害 / 總有效秒數)
+    this.dps = Math.floor(this.totalDamage / totalSeconds) || 0;
 
     // --- WPM 計算邏輯 ---
     // 如果距離上次輸入在一秒內，代表正在打字，累加有效時間
@@ -134,6 +165,12 @@ export class TextInput {
     // 更新歷史最高 WPM
     if (this.wpm > this.topWpm) {
       this.topWpm = this.wpm;
+    }
+  }
+
+  updateAccuracy() {
+    if (this.totalInputs > 0) {
+      this.accuracy = parseFloat(((this.correctInputs / this.totalInputs) * 100).toFixed(1));
     }
   }
 
@@ -182,11 +219,19 @@ export class TextInput {
     ctx.fillText(`COMBO: ${this.combo}`, statsX, statsY);
 
     // WPM 數字
-    ctx.fillStyle = this.isPaused ? "#555" : "#aaa";;
+    // ctx.fillStyle = this.isPaused ? "#555" : "#aaa";
+    ctx.fillStyle = "#ffffff";
     ctx.fillText(`WPM: ${this.wpm}`, statsX, statsY + 20);
 
-    ctx.fillStyle = "#ffffff"; // 金色顯示最高紀錄
-    ctx.fillText(`TOP WPM: ${this.topWpm}`, statsX, statsY + 40);
+    // ctx.fillStyle = "#ffffff";
+    // ctx.fillText(`TOP WPM: ${this.topWpm}`, statsX, statsY + 40);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(`Accuracy: ${this.accuracy}`, statsX, statsY + 40);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(`DPS: ${this.dps}`, statsX, statsY + 60);
+
     ctx.restore();
   }
 

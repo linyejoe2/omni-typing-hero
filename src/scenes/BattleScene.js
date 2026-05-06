@@ -97,6 +97,7 @@ export class BattleScene extends Scene {
       if (isHit) {
         // this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
         this.monster.takeDamage(pj.damage, pj.isCrit); // 怪物受傷
+        this.textInput.recordDamage(pj.damage)
 
         this.damageNumbers.push(new DamageNumber(
           this.monster.damageNumberX,
