@@ -21,14 +21,10 @@ export class BattleScene extends Scene {
     this.charData = charData;
 
     // gamestate
-    this.hearts = CONFIG.maxHearts;
     this.gold = 0;
     this.isGameOver = false;
     this.restartTimer = 60;
     this.monster = { hp: CONFIG.monsterMaxHP, rage: 0 };
-    this.currentWord = "";
-    this.typedIndex = 0;
-    this.lastKeyPressed = "";
 
     this.hero = this.createHero();
     this.monster = this.createMonster();
@@ -350,6 +346,8 @@ export class BattleScene extends Scene {
   onDeath() {
     console.log("onDeath!")
     this.isGameOver = true;
+    this.textInput = new TextInput();
+    this.keyboard = new Keyboard();
   }
 
   resetGame() {
