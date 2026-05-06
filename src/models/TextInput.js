@@ -1,10 +1,11 @@
 import { CONFIG } from "../CONST.js";
-import { fetchNewWord } from "../services/randomWordAPI.js";
+import { dictionary } from "../services/DictionaryManager.js";
 
 export class TextInput {
   constructor(config = {}) {
-    this.wordList = ["START", "Fire Ball", "Magic", "Crystal", "Dragon", "Knight", "Castle", "OMNI", "Typing", "HERO"];
-    this.currentWord = this.wordList.shift();
+    // this.wordList = ["START", "Fire Ball", "Magic", "Crystal", "Dragon", "Knight", "Castle", "OMNI", "Typing", "HERO"];
+    // this.currentWord = this.wordList.shift();
+    this.currentWord = "";
     this.typedIndex = 0;
     this.combo = 0;
     this.wpm = 0;
@@ -16,7 +17,7 @@ export class TextInput {
     this.y = config.y || CONFIG.height * 0.65;
 
     // 初始獲取單字
-    // this._fetchNewWord();
+    this._fetchNewWord();
 
     // 狂暴模式與能量條
     this.energy = 0;          // 0 ~ 100
@@ -30,12 +31,12 @@ export class TextInput {
    * 獲取新單字
    * 你可以根據需求修改這個來源 (API 或 本地詞庫)
    */
-  async _fetchNewWord() {
-    this.currentWord = this.wordList.shift();
+  async _fetchNewWord() {// 從已經緩存好的字典中抽字
+    this.currentWord = dictionary.getRandomWord();
     this.typedIndex = 0;
-    while (this.wordList.length < 5) {
-      this.wordList.push(await fetchNewWord());
-    }
+    // while (this.wordList.length < 5) {
+    //   this.wordList.push(await fetchNewWordFromFile("Oxford Phrasal Academic Lexicon.txt"));
+    // }
   }
 
   /**
