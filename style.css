@@ -76,11 +76,15 @@ canvas {
 }
 
 .bgm-ctrl {
+  margin-top: 10px;
+}
+
+/* .bgm-ctrl {
   position: fixed;
   top: 20px;
   right: 20px;
   z-index: 9999;
-}
+} */
 
 /* 播放狀態下的特殊邊框與發光 */
 .bgm-ctrl.playing {
@@ -150,6 +154,16 @@ canvas {
   margin-bottom: 20px;
 }
 
+.stats-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
 .stat-item {
   text-align: center;
   font-size: 0.7em;
@@ -200,4 +214,75 @@ canvas {
 
 .attr-list {
   line-height: 1.8;
+}
+
+#game-layout {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+#leaderboard-side {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  width: 300px;
+  background: rgba(30, 30, 30, 0.9);
+  border: 2px solid #444;
+  border-radius: 12px;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+}
+
+.lb-title {
+  text-align: center;
+  background: #444;
+  margin: 0;
+  padding: 10px;
+  color: #62fd4e;
+}
+
+.lb-header {
+  display: flex;
+  padding: 8px;
+  background: #333;
+  font-size: 12px;
+  color: #aaa;
+}
+
+#lb-list {
+  height: 600px;
+  overflow-y: auto;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 8px;
+  border-bottom: 1px solid #333;
+  transition: background 0.2s;
+}
+
+.lb-row:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* 欄位寬度控制 */
+.col-rank { width: 30px; font-weight: bold; }
+.col-player { flex: 1; display: flex; align-items: center; gap: 8px; }
+.col-time { width: 50px; color: #ffeb3b; }
+.col-stats { width: 100px; font-size: 10px; text-align: right; }
+
+.avatar-mini {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  background: #222;
+  border-radius: 4px;
+}
+
+.timestamp {
+  display: block;
+  font-size: 9px;
+  color: #666;
 }

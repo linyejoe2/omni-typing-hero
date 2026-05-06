@@ -1,10 +1,35 @@
 import { Mage } from "../models/Hero/Mage.js";
+import { FirebaseService } from "../services/firebase.js";
 
 export class PlayerPanel {
   constructor() {
     this.container = document.getElementById('playerPanel');
     this.avatarCtx = document.getElementById('avatarCanvas').getContext('2d');
+    this.initSettingsTab();
     this.setupTabs();
+  }
+
+  initSettingsTab() {
+    const btnLogout = document.getElementById('btn-logout');
+
+    if (btnLogout) {
+      btnLogout.addEventListener('click', async () => {
+        // 彈出確認視窗，增加點代入感
+        if (confirm("確定要離開這個冒險世界嗎？")) {
+          try {
+            await FirebaseService.logout();
+
+            // 登出後的處理：通常是重整頁面回到登入選單
+            window.location.reload();
+
+            // 或者如果你是單頁面應用 (SPA)：
+            // showLoginScreen(); 
+          } catch (err) {
+            alert("登出失敗，請稍後再試");
+          }
+        }
+      });
+    }
   }
 
   setupTabs() {
@@ -23,8 +48,10 @@ export class PlayerPanel {
   update(data) {
     document.getElementById('panel-nickname').textContent = data.nickname;
     document.getElementById('panel-job-lv').textContent = `Lv.${data.level} ${data.job}`;
-    document.getElementById('stat-avg-wpm').textContent = data.avgWpm || 0;
+    document.getElementById('stat-avg-wpm').textContent = data.wpm || 0;
     document.getElementById('stat-max-wpm').textContent = data.maxWpm || 0;
+    document.getElementById('stat-accuracy').textContent = data.accuracy || 0;
+    document.getElementById('stat-total-kills').textContent = data.totalKills || 0;
     document.getElementById('stat-max-combo').textContent = data.maxCombo || 0;
 
     // 更新屬性內文

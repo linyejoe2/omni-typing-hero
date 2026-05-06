@@ -9,9 +9,7 @@ class UIBase {
 
     // 重新封裝原本的 showScreen
     showScreen(id) {
-        // 支援原始 id 或簡寫
-        const key = id.replace('-screen', '');
-        this.screens.show(key);
+        this.screens.show(id);
     }
 
     // 獲取所有輸入框資料

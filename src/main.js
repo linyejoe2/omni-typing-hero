@@ -39,7 +39,7 @@ class App {
         console.log("用戶已登入:", user.email);
         await this.handlePostLogin(user.uid);
       } else {
-        UI.showScreen('auth-screen');
+        UI.showScreen('auth');
       }
     });
   }
@@ -56,7 +56,7 @@ class App {
       } else {
         // 沒有角色資訊，跳轉到創建頁面
         console.log("無角色資訊，前往創建頁面");
-        UI.showScreen('char-creator');
+        UI.showScreen('creator');
       }
     } catch (error) {
       console.error("檢查角色失敗:", error);
@@ -72,9 +72,9 @@ class App {
         const charData = await FirebaseService.getCharacter(user.uid);
 
         if (charData) {
-          UI.showScreen('game-screen');
+          UI.showScreen('game');
         } else {
-          UI.showScreen('char-creator');
+          UI.showScreen('creator');
         }
       } catch (err) {
         alert("登入失敗: " + err.message);
@@ -113,7 +113,7 @@ class App {
   }
 
   startActualGame(charData) {
-    UI.showScreen('game-screen');
+    UI.showScreen('game');
     sceneManager.switchTo(new BattleScene(canvas, charData));
     UI.playerPanel.update(charData);
     gameLoop();

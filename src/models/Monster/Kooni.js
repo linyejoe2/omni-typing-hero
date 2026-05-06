@@ -4,6 +4,7 @@
 export class Kooni {
   constructor(config = {}) {
     // 基礎屬性
+    this.name = "Kooni"
     this.maxHp = config.hp || 100;
     this.hp = this.maxHp;
     this._damage = 10;

@@ -34,7 +34,12 @@
     <div class="stats-grid">
       <div class="stat-item"><span>Avg WPM</span><strong id="stat-avg-wpm">0</strong></div>
       <div class="stat-item"><span>Max WPM</span><strong id="stat-max-wpm">0</strong></div>
-      <div class="stat-item"><span>Combo</span><strong id="stat-max-combo">0</strong></div>
+      <div class="stat-item"><span>Accuracy</span><strong id="stat-accuracy">0</strong></div>
+    </div>
+
+    <div class="stats-grid-2">
+      <div class="stat-item"><span>Max Combo</span><strong id="stat-max-combo">0</strong></div>
+      <div class="stat-item"><span>Total Kills</span><strong id="stat-total-kills">0</strong></div>
     </div>
 
     <!-- 3. Tab Bar -->
@@ -55,14 +60,29 @@
       </div>
       <div id="tab-set" class="tab-pane">
         <button id="btn-logout" class="btn">登出世界</button>
+
+        <button id="bgm-toggle" class="bgm-ctrl btn">
+          <span class="icon">♪</span>
+          <span class="status">BGM OFF</span>
+        </button>
       </div>
     </div>
   </div>
   <!-- right panle -->
-  <button id="bgm-toggle" class="bgm-ctrl btn">
-    <span class="icon">♪</span>
-    <span class="status">BGM OFF</span>
-  </button>
+  <div id="leaderboard-side">
+    <h3 class="lb-title">TOP RANKING</h3>
+    <div class="lb-header">
+      <span class="col-rank">#</span>
+      <span class="col-player">PLAYER</span>
+      <span class="col-time">TIME</span>
+      <span class="col-stats">STATS</span>
+    </div>
+    <div id="lb-list">
+      <!-- 這裡由 JS 動態生成內容 -->
+    </div>
+  </div>
+
+
   <div id="auth-screen">
     <div class="auth-box">
       <h1>像素冒險</h1>

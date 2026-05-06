@@ -8,6 +8,9 @@ import { DamageNumber } from '../models/Effect/DamageNumber.js';
 import { drawSword } from '../models/Icon/Sword.js';
 import { drawCoin } from '../models/Icon/Coin.js';
 import { EnemyFireball } from "../models/Projectile/EnemyFireball.js"
+import { FirebaseService } from '../services/firebase.js';
+import { UI } from '../ui/index.js';
+import { refreshLeaderboard } from '../ui/LeaderBoard.js';
 
 export class BattleScene extends Scene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
@@ -39,10 +42,16 @@ export class BattleScene extends Scene {
 
     this.shakeTime = 0; // 震動剩餘幀數
     this.shakeIntensity = 5; // 震動強度
+    
+    refreshLeaderboard("Kooni")
 
     // 重要：連結鍵盤與輸入邏輯
-    this.keyboard.onKeyPress = (char) => {
-      if (this.isGameOver) this.resetGame();
+    this.keyboard.onKeyPress = async (char) => {
+      if (this.isGameOver) {
+        const charData = await FirebaseService.getCharacter(FirebaseService.auth.currentUser.uid);
+        UI.playerPanel.update(charData)
+        this.resetGame()
+      };
 
       const result = this.textInput.handleInput(char);
 
@@ -80,8 +89,57 @@ export class BattleScene extends Scene {
   }
 
   onDeath() {
-    console.log("onDeath!")
+    if (this.isGameOver) return;
     this.isGameOver = true;
+
+    const user = FirebaseService.auth.currentUser;
+    if (!user) return;
+
+    // 準備數據包
+    const finalStats = {
+      monster: this.monster.name,
+      nickname: this.charData.nickname,
+      clear: this.monster.status == "DEAD",
+      job: this.hero.job,
+      wpm: this.textInput.wpm,
+      dps: this.textInput.dps,
+      accuracy: this.textInput.accuracy,
+      maxCombo: this.textInput.maxCombo,
+      seconds: Math.floor(this.textInput.totalActiveTime / 1000)
+    };
+
+    FirebaseService.addBattleRecord(user.uid, finalStats);
+  }
+
+  onMonsterDie() {
+    if (this.isGameOver) return;
+    this.isGameOver = true;
+
+    const user = FirebaseService.auth.currentUser;
+    if (!user) return;
+
+    // 準備數據包
+    const finalStats = {
+      monster: this.monster.name,
+      nickname: this.charData.nickname,
+      clear: this.monster.status == "DEAD",
+      job: this.hero.job,
+      wpm: this.textInput.wpm,
+      dps: this.textInput.dps,
+      accuracy: this.textInput.accuracy,
+      maxCombo: this.textInput.maxCombo,
+      seconds: Math.floor(this.textInput.totalActiveTime / 1000)
+    };
+
+    // 1. 執行畫面上提到的 "Save record into leaderboard"
+    FirebaseService.addBattleRecord(user.uid, finalStats);
+
+    // 2. 更新角色的生涯數據 (Max WPM 等)
+    FirebaseService.updatePersonalBest(user.uid, finalStats);
+
+    FirebaseService.updateLeaderboard(user.uid, finalStats);
+
+    refreshLeaderboard("Kooni")
   }
 
   resetGame() {
@@ -165,7 +223,7 @@ export class BattleScene extends Scene {
     }
 
     // 怪物死亡
-    if (this.monster.status == "DEAD") this.isGameOver = true
+    if (this.monster.status == "DEAD") this.onMonsterDie()
 
     if (this.isGameOver && this.restartTimer) {
       this.restartTimer--
