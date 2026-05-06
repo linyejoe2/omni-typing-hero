@@ -57,6 +57,10 @@ export class BattleScene extends Scene {
 
   }
 
+  isGameCleared() {
+    return this.monster.hp <= 0;
+  }
+
   createHero() {
     const data = { ...this.charData, onDeath: this.onDeath.bind(this) };
     switch (data.job) {
@@ -68,11 +72,27 @@ export class BattleScene extends Scene {
 
   createMonster() {
     return new Kooni({
-      hp: 1000,
+      hp: 10,
       x: 650,
       y: CONFIG.groundY - 20,
       rageThreshold: 50
     });
+  }
+
+  onDeath() {
+    console.log("onDeath!")
+    this.isGameOver = true;
+  }
+
+  resetGame() {
+    if (this.restartTimer) return
+    this.isGameOver = false;
+    this.restartTimer = 60;
+    this.hero = this.createHero();
+    this.monster = this.createMonster();
+    this.textInput = new TextInput();
+    this.keyboard = new Keyboard();
+    return
   }
 
   // 1. 邏輯更新：處理物理、碰撞、計數
@@ -148,12 +168,14 @@ export class BattleScene extends Scene {
       this.shakeTime--;
     }
 
-    // 怪物重生
-    if (this.monster.status == "DEAD") this.monsterRebirthCountDown--;
-    if (this.monsterRebirthCountDown <= 0) {
-      this.monster = this.createMonster();
-      this.monsterRebirthCountDown = 15;
-    }
+    // 怪物死亡
+    if (this.monster.status == "DEAD") this.isGameOver = true
+    // if (this.isGameOver && this.monster.status == "DEAD") this.monsterRebirthCountDown--;
+    // if (!this.isGameOver && this.monsterRebirthCountDown <= 0) {
+    //   this.monster.hp = 1
+    //   this.monster = this.createMonster();
+    //   this.monsterRebirthCountDown = 15;
+    // }
 
     if (this.isGameOver && this.restartTimer) {
       this.restartTimer--
@@ -209,7 +231,7 @@ export class BattleScene extends Scene {
     // 3. 繪製底部的虛擬鍵盤
     this.keyboard.draw(ctx);
 
-    if (this.isGameOver) this.drawGameOver(ctx)
+    if (this.isGameOver) this.isGameCleared() ? this.drawGameClear(ctx) : this.drawGameOver(ctx)
 
     ctx.restore(); // --- 重要：結束後還原狀態，避免影響下一幀 ---
   }
@@ -327,35 +349,111 @@ export class BattleScene extends Scene {
     ctx.restore();
   }
 
-  drawGameOver(ctx) {
-    // 死亡畫面遮罩
-    ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.8)";
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  drawGameClear(ctx) {
+    const { width, height } = ctx.canvas;
 
-    ctx.fillStyle = "#ff0000";
-    ctx.font = "bold 60px 'Courier New'";
+    // 1. 通關畫面全螢幕遮罩
+    ctx.save();
+    ctx.fillStyle = "rgba(63, 63, 63, 0.85)"; // 加深一點背景，讓卡片更突出
+    ctx.fillRect(0, 0, width, height);
+
+    // 2. 主標題
+    ctx.fillStyle = "#62fd4e"; // 經典通關綠
+    ctx.font = "bold 50px 'Courier New'";
     ctx.textAlign = "center";
-    ctx.fillText("戰死沙場", ctx.canvas.width / 2, ctx.canvas.height / 2 - 50);
+    ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
+    ctx.shadowBlur = 15;
+    ctx.fillText("You beat the Kooni!", width / 2, height / 2 - 140);
+    ctx.shadowBlur = 0; // 重置陰影
+
+    this.drawCardData(ctx)
 
     ctx.fillStyle = "#fff";
     ctx.font = "20px 'Courier New'";
-    ctx.fillText("按下任何鍵重新開始", ctx.canvas.width / 2, ctx.canvas.height / 2 + 20);
+    ctx.fillText("Press any key to restart", width / 2, height / 2 + 200);
     ctx.restore();
   }
 
-  onDeath() {
-    console.log("onDeath!")
-    this.isGameOver = true;
-    this.textInput = new TextInput();
-    this.keyboard = new Keyboard();
+  drawGameOver(ctx) {
+    const { width, height } = ctx.canvas;
+
+    // 死亡畫面遮罩
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = "#ff0000";
+    ctx.font = "bold 50px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
+    ctx.shadowBlur = 15;
+    // ctx.fillText("戰死沙場", ctx.canvas.width / 2, ctx.canvas.height / 2 - 50);
+    ctx.fillText("You DIE", width / 2, height / 2 - 140);
+    ctx.shadowBlur = 0; // 重置陰影
+
+    this.drawCardData(ctx)
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "20px 'Courier New'";
+    ctx.fillText("Press any key to restart", width / 2, height / 2 + 200);
+    // ctx.fillText("按下任何鍵重新開始", ctx.canvas.width / 2, ctx.canvas.height / 2 + 20);
+    ctx.restore();
   }
 
-  resetGame() {
-    if (this.restartTimer) return
-    this.isGameOver = false;
-    this.restartTimer = 60;
-    this.hero = this.createHero();
-    return
+  drawCardData(ctx) {
+    const { width, height } = ctx.canvas;
+
+    // 3. 繪製數據卡片 (Max Combo, WPM, DPS, Accuracy)
+    const cardData = [
+      { label: "MAX COMBO", value: this.textInput.maxCombo, color: "#ffeb3b" },
+      { label: "WPM", value: this.textInput.wpm, color: "#03a9f4" },
+      { label: "DPS", value: this.textInput.dps, color: "#ff4500" },
+      { label: "ACCURACY", value: `${this.textInput.accuracy}%`, color: "#8bc34a" }
+    ];
+
+    const cardW = 140;
+    const cardH = 100;
+    const gap = 20;
+    const totalW = (cardW * 4) + (gap * 3);
+    let startX = (width - totalW) / 2;
+    const cardY = height / 2 - 60;
+
+    cardData.forEach((data, i) => {
+      const x = startX + i * (cardW + gap);
+
+      // 繪製卡片背景 (磨砂玻璃感)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      this._roundRect(ctx, x, cardY, cardW, cardH, 12, true, true);
+
+      // 標籤文字
+      ctx.font = "bold 14px 'Courier New'";
+      ctx.fillStyle = "#aaa";
+      ctx.fillText(data.label, x + cardW / 2, cardY + 35);
+
+      // 數值文字
+      ctx.font = "bold 28px 'Courier New'";
+      ctx.fillStyle = data.color;
+      ctx.fillText(data.value, x + cardW / 2, cardY + 75);
+    });
+  }
+
+  /**
+ * 輔助方法：繪製圓角矩形
+ */
+  _roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
   }
 }

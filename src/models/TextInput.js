@@ -12,6 +12,7 @@ export class TextInput {
     this.startTime = Date.now();
     this.lastInputTime = Date.now(); // 最後一次按鍵的時間
     this.combo = 0;
+    this.maxCombo = 0;
     this.wpm = 0;
     this.topWpm = 0;
     this.typedChars = 0;      // 累計打對的字數（計算 WPM 用）
@@ -69,6 +70,7 @@ export class TextInput {
       this.typedIndex++;
       this.typedChars++;
       this.combo++;
+      this.maxCombo = Math.max(this.maxCombo, this.combo);
 
       // 計算準確度
       this.updateAccuracy();
@@ -227,7 +229,7 @@ export class TextInput {
     // ctx.fillText(`TOP WPM: ${this.topWpm}`, statsX, statsY + 40);
 
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(`Accuracy: ${this.accuracy}`, statsX, statsY + 40);
+    ctx.fillText(`Accuracy: ${this.accuracy}%`, statsX, statsY + 40);
 
     ctx.fillStyle = "#ffffff";
     ctx.fillText(`DPS: ${this.dps}`, statsX, statsY + 60);
