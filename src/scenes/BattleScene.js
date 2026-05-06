@@ -72,7 +72,7 @@ export class BattleScene extends Scene {
 
   createMonster() {
     return new Kooni({
-      hp: 1000,
+      hp: 500,
       x: 650,
       y: CONFIG.groundY - 20,
       rageThreshold: 50
@@ -367,7 +367,7 @@ export class BattleScene extends Scene {
 
     ctx.fillStyle = "#fff";
     ctx.font = "20px 'Courier New'";
-    ctx.fillText("Press any key to restart", width / 2, height / 2 + 200);
+    ctx.fillText("Press any key to search another Kooni", width / 2, height / 2 + 200);
     ctx.restore();
   }
 
@@ -403,7 +403,7 @@ export class BattleScene extends Scene {
 
     ctx.fillStyle = "#fff";
     ctx.font = "20px 'Courier New'";
-    ctx.fillText("Press any key to restart", width / 2, height / 2 + 200);
+    ctx.fillText("Press any key to resurrect", width / 2, height / 2 + 200);
     // ctx.fillText("按下任何鍵重新開始", ctx.canvas.width / 2, ctx.canvas.height / 2 + 20);
     ctx.restore();
   }
