@@ -1,4 +1,4 @@
-import { UI } from './ui.js';
+import { UI } from './ui/index.js';
 import { BattleScene } from './scenes/BattleScene.js';
 import { SceneManager } from './scenes/SceneManager.js';
 import { FirebaseService } from './services/firebase.js';
@@ -64,12 +64,21 @@ class App {
   }
 
   initEventListeners() {
-    // 登入按鈕
-    document.getElementById('btn-login').addEventListener('click', async () => {
+    // 登入邏輯
+    UI.on('btn-login', 'click', async () => {
       const { email, pass } = UI.getInputs();
       try {
-        await FirebaseService.login(email, pass);
-      } catch (e) { alert("登入失敗: " + e.message); }
+        const user = await FirebaseService.login(email, pass);
+        const charData = await FirebaseService.getCharacter(user.uid);
+
+        if (charData) {
+          UI.showScreen('game-screen');
+        } else {
+          UI.showScreen('char-creator');
+        }
+      } catch (err) {
+        alert("登入失敗: " + err.message);
+      }
     });
 
     // 註冊按鈕
@@ -106,6 +115,7 @@ class App {
   startActualGame(charData) {
     UI.showScreen('game-screen');
     sceneManager.switchTo(new BattleScene(canvas, charData));
+    UI.playerPanel.update(charData);
     gameLoop();
     console.log("遊戲開始！角色：", charData.nickname);
   }

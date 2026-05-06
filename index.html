@@ -18,8 +18,48 @@
 </head>
 
 <body>
-  <!-- 加在所有 div 之前 -->
-  <button id="bgm-toggle" class="bgm-ctrl">
+  <!-- left panel -->
+  <div id="playerPanel" class="modern-panel">
+    <!-- 1. 角色點陣圖 -->
+    <div class="char-avatar-container">
+      <canvas id="avatarCanvas" width="64" height="64"></canvas>
+    </div>
+
+    <!-- 2. 基本資料與統計 -->
+    <div class="panel-header">
+      <h3 id="panel-nickname">冒險者</h3>
+      <span id="panel-job-lv">Lv.1 劍客</span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item"><span>Avg WPM</span><strong id="stat-avg-wpm">0</strong></div>
+      <div class="stat-item"><span>Max WPM</span><strong id="stat-max-wpm">0</strong></div>
+      <div class="stat-item"><span>Combo</span><strong id="stat-max-combo">0</strong></div>
+    </div>
+
+    <!-- 3. Tab Bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="attr">屬性</button>
+      <button class="tab-btn" data-tab="bag">背包</button>
+      <button class="tab-btn" data-tab="set">設定</button>
+    </div>
+
+    <!-- 4. Tab Content -->
+    <div class="tab-content" id="tab-container">
+      <div id="tab-attr" class="tab-pane active">
+        <!-- 這裡放 STR, VIT, AGI 等 -->
+        <div class="attr-list" id="attr-list"></div>
+      </div>
+      <div id="tab-bag" class="tab-pane">
+        <div class="inventory-grid" id="inventory-grid"></div>
+      </div>
+      <div id="tab-set" class="tab-pane">
+        <button id="btn-logout" class="btn">登出世界</button>
+      </div>
+    </div>
+  </div>
+  <!-- right panle -->
+  <button id="bgm-toggle" class="bgm-ctrl btn">
     <span class="icon">♪</span>
     <span class="status">BGM OFF</span>
   </button>

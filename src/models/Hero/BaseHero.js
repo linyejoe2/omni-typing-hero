@@ -1,6 +1,6 @@
 import { CONFIG } from "../../CONST.js";
 
-const rate_multiplier = {
+const rateMultiplier = {
   STR: 3,
   CRI: 0.01,
   VIT: 20,
@@ -15,6 +15,7 @@ export class BaseHero {
     this.job = data.job;
     // this.gender = 'MALE'; // 'MALE' 或 'FEMALE'
     this.gender = data.gender; // 'MALE' 或 'FEMALE'
+    this.isFemale = this.gender === 'FEMALE';
 
     // 座標與狀態
     this.x = 150;
@@ -24,8 +25,16 @@ export class BaseHero {
     this.shakeTime = 0;
 
     // 根據性別設定像素裝飾色
-    this.skinColor = "#ffdbac";
-    this.decoColor = this.gender === 'FEMALE' ? "#ff99cc" : "#99ccff";
+    this.palette = {
+      primary: "#6c5ce7",      // 深紫 (主色)
+      light: "#a29bfe",        // 淺紫 (高光)
+      dark: "#4834d4",         // 暗紫 (陰影)
+      skin: this.isFemale ? "#ffe0bd" : "#ffcc91",         // 膚色
+      skinShadow: "#ffcd94",   // 膚色陰影
+      eye: "#2d3436",          // 眼睛
+      deco: this.isFemale ? "#ff99cc" : "#99ccff",        // 裝飾紅/寶石
+      hair: this.isFemale ? "#ff99cc" : "#788694"
+    };
 
     // 基礎等級資訊
     this.level = data.level - 1 || 0;
@@ -77,24 +86,24 @@ export class BaseHero {
   updateFinalStats() {
     // --- 攻擊力計算 (STR 影響) ---
     // 公式：基礎 10 + (等級 * 成長) + (力量點數 * 3)
-    this.maxAtk += (this.level * this.growthRates.atk) + (this.assignedPoints.STR * rate_multiplier.STR);
+    this.maxAtk += (this.level * this.growthRates.atk) + (this.assignedPoints.STR * rateMultiplier.STR);
 
     // --- 爆擊率計算 (CRI 影響) ---
     // 公式：基礎 5% + (等級 * 成長) + (會心點數 * 1%)
-    this.critRate += (this.level * this.growthRates.crit) + (this.assignedPoints.CRI * rate_multiplier.CRI);
+    this.critRate += (this.level * this.growthRates.crit) + (this.assignedPoints.CRI * rateMultiplier.CRI);
 
     // --- 最大生命值計算 (VIT 影響) ---
     // 公式：基礎 100 + (等級 * 成長) + (體質點數 * 20)
-    this.maxHp += (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * rate_multiplier.VIT);
+    this.maxHp += (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * rateMultiplier.VIT);
 
     // --- 物理/魔法防禦計算 (DEF/RES 影響) ---
-    this.pDef += (this.level * this.growthRates.def) + (this.assignedPoints.DEF * rate_multiplier.DEF);
-    this.mRes += (this.level * this.growthRates.res) + (this.assignedPoints.RES * rate_multiplier.RES);
+    this.pDef += (this.level * this.growthRates.def) + (this.assignedPoints.DEF * rateMultiplier.DEF);
+    this.mRes += (this.level * this.growthRates.res) + (this.assignedPoints.RES * rateMultiplier.RES);
 
     // --- 閃避率計算 (AGI 影響) ---
     // 公式：基礎 3% + (等級 * 成長) + (敏捷點數 * 1.5%)
     // 設定上限 (Cap) 為 50% 避免無敵
-    const rawEva = (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * rate_multiplier.AGI);
+    const rawEva = (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * rateMultiplier.AGI);
     this.evaRate += Math.min(0.8, rawEva);
   }
 
@@ -176,5 +185,28 @@ export class BaseHero {
     this.renderHero(ctx); // 呼叫子類別的具體畫法
 
     ctx.restore();
+  }
+
+  /**
+   * 外部呼叫的統一接口
+   * @param {CanvasRenderingContext2D} ctx 
+   */
+  static renderAvatar(ctx) {
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.imageSmoothingEnabled = false;
+
+    // 臉部
+    ctx.fillStyle = '#ffe0bd';
+    ctx.fillRect(20, 12, 24, 20);
+    // 眼睛
+    ctx.fillStyle = '#000';
+    ctx.fillRect(24, 20, 4, 4);
+    ctx.fillRect(36, 20, 4, 4);
+
+    // 預設什麼都不畫，或畫一件白襯衫
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(16, 32, 32, 24);
   }
 }

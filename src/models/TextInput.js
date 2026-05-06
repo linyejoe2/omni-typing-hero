@@ -11,6 +11,10 @@ export class TextInput {
     this.wpm = 0;
     this.typedChars = 0;      // 累計打對的字數（計算 WPM 用）
     this.startTime = Date.now();
+    this.topWpm = 0;
+    this.totalActiveTime = 0; // 實際在打字的總毫秒數
+    this.lastInputTime = Date.now(); // 最後一次按鍵的時間
+    this.isPaused = true; // 預設暫停，直到第一次按鍵
 
     // 視覺位置 (放在對戰區與鍵盤區中間)
     this.x = config.x || CONFIG.width / 2; // 假設畫布寬 800，置中為 400
@@ -45,9 +49,12 @@ export class TextInput {
    * @returns {string|boolean} 回傳結果類型供 Scene 觸發效果
    */
   handleInput(char) {
+    const now = Date.now();
     const expectedChar = this.currentWord[this.typedIndex];
 
     if (char === expectedChar) {
+      this.lastInputTime = now;
+
       this.typedIndex++;
       this.typedChars++;
       this.combo++;
@@ -88,9 +95,7 @@ export class TextInput {
   }
 
   update() {
-    const now = Date.now();
-    const minutes = (now - this.startTime) / 60000;
-    this.wpm = Math.floor((this.typedChars / 5) / minutes) || 0;
+    this.updateWpm()
 
     if (this.isFrenzy) {
       // 狂暴模式：能量條慢慢消退
@@ -101,6 +106,34 @@ export class TextInput {
         this.isFrenzy = false;
         this.energy = 0;
       }
+    }
+  }
+
+  updateWpm() {
+    const now = Date.now();
+    const deltaTime = now - (this.lastFrameTime || now);
+    this.lastFrameTime = now;
+
+    // --- WPM 計算邏輯 ---
+    // 如果距離上次輸入在一秒內，代表正在打字，累加有效時間
+    if (now - this.lastInputTime < 1000) {
+      this.totalActiveTime += deltaTime;
+      this.isPaused = false;
+    } else {
+      this.isPaused = true; // 超過一秒沒動，進入暫停狀態
+    }
+
+    if (this.totalActiveTime <= 0) return;
+
+    // 將有效毫秒數換算成分鐘
+    const minutes = this.totalActiveTime / 60000;
+
+    // 計算目前的 WPM
+    this.wpm = Math.floor((this.typedChars / 5) / minutes) || 0;
+
+    // 更新歷史最高 WPM
+    if (this.wpm > this.topWpm) {
+      this.topWpm = this.wpm;
     }
   }
 
@@ -149,8 +182,11 @@ export class TextInput {
     ctx.fillText(`COMBO: ${this.combo}`, statsX, statsY);
 
     // WPM 數字
-    ctx.fillStyle = "#aaa";
+    ctx.fillStyle = this.isPaused ? "#555" : "#aaa";;
     ctx.fillText(`WPM: ${this.wpm}`, statsX, statsY + 20);
+
+    ctx.fillStyle = "#ffffff"; // 金色顯示最高紀錄
+    ctx.fillText(`TOP WPM: ${this.topWpm}`, statsX, statsY + 40);
     ctx.restore();
   }
 
