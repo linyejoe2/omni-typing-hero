@@ -125,7 +125,7 @@ export const FirebaseService = {
 
       // 只有當這次的 WPM 超過排行榜上的紀錄時才更新
       // 或是你可以根據你的規則 (例如：比 DPS)
-      const shouldUpdate = !lbSnap.exists() || stats.seconds > lbSnap.data().seconds;
+      const shouldUpdate = !lbSnap.exists() || stats.seconds < lbSnap.data().seconds;
 
       if (shouldUpdate) {
         await setDoc(lbRef, {

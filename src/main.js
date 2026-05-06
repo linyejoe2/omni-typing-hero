@@ -13,21 +13,59 @@ const ctx = canvas.getContext('2d');
 canvas.width = CONFIG.width;
 canvas.height = CONFIG.height;
 
-function gameLoop() {
-  // 1. 處理邏輯
-  sceneManager.update();
+// function gameLoop() {
+//   // 1. 處理邏輯
+//   sceneManager.update();
 
-  // 2. 渲染畫面
-  ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-  sceneManager.draw(ctx);
+//   // 2. 渲染畫面
+//   ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
+//   sceneManager.draw(ctx);
 
-  requestAnimationFrame(gameLoop);
+//   requestAnimationFrame(gameLoop);
+// }
+
+class GameLoop {
+  constructor() {
+    this.fps = 60;
+    this.fpsInterval = 1000 / this.fps;
+    this.then = Date.now();
+  }
+
+  start() {
+    this.animate();
+  }
+
+  animate = () => {
+    requestAnimationFrame(this.animate);
+
+    const now = Date.now();
+    const elapsed = now - this.then;
+
+    // 如果距離上次執行超過了 16.67ms
+    if (elapsed > this.fpsInterval) {
+      // 校正 then 時間（扣除溢出的毫秒數，讓計時更精準）
+      this.then = now - (elapsed % this.fpsInterval);
+
+      // 執行遊戲邏輯與渲染
+      this._loop();
+    }
+  }
+
+  _loop() {
+    // 1. 處理邏輯
+    sceneManager.update();
+
+    // 2. 渲染畫面
+    ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
+    sceneManager.draw(ctx);
+  }
 }
 
 class App {
   constructor() {
     this.initEventListeners();
     this.checkAuthState();
+    this.game = new GameLoop()
 
     audioManager.init();
   }
@@ -116,7 +154,7 @@ class App {
     UI.showScreen('game');
     sceneManager.switchTo(new BattleScene(canvas, charData));
     UI.playerPanel.update(charData);
-    gameLoop();
+    this.game.start();
     console.log("遊戲開始！角色：", charData.nickname);
   }
 }
