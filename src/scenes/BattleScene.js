@@ -42,7 +42,9 @@ export class BattleScene extends Scene {
 
     this.shakeTime = 0; // 震動剩餘幀數
     this.shakeIntensity = 5; // 震動強度
-    
+
+    this.finalStats = {};
+
     refreshLeaderboard("Kooni")
 
     // 重要：連結鍵盤與輸入邏輯
@@ -63,7 +65,21 @@ export class BattleScene extends Scene {
         this.monster.penalizeMiss();
       }
     };
+  }
 
+  updateFinalStats() {
+    if (Object.keys(this.finalStats).length > 0) return
+    this.finalStats = {
+      monster: this.monster.name,
+      nickname: this.charData.nickname,
+      clear: this.monster.status == "DEAD",
+      job: this.hero.job,
+      wpm: this.textInput.wpm,
+      dps: this.textInput.dps,
+      accuracy: this.textInput.accuracy,
+      maxCombo: this.textInput.maxCombo,
+      seconds: Math.round(this.textInput.totalActiveTime * 10) / 10000
+    };
   }
 
   isGameCleared() {
@@ -81,7 +97,7 @@ export class BattleScene extends Scene {
 
   createMonster() {
     return new Kooni({
-      hp: 500,
+      hp: 250,
       x: 650,
       y: CONFIG.groundY - 20,
       rageThreshold: 50
@@ -91,55 +107,31 @@ export class BattleScene extends Scene {
   onDeath() {
     if (this.isGameOver) return;
     this.isGameOver = true;
+    this.updateFinalStats()
 
     const user = FirebaseService.auth.currentUser;
     if (!user) return;
 
-    // 準備數據包
-    const finalStats = {
-      monster: this.monster.name,
-      nickname: this.charData.nickname,
-      clear: this.monster.status == "DEAD",
-      job: this.hero.job,
-      wpm: this.textInput.wpm,
-      dps: this.textInput.dps,
-      accuracy: this.textInput.accuracy,
-      maxCombo: this.textInput.maxCombo,
-      seconds: Math.floor(this.textInput.totalActiveTime / 1000)
-    };
-
-    FirebaseService.addBattleRecord(user.uid, finalStats);
+    FirebaseService.addBattleRecord(user.uid, this.finalStats);
   }
 
   onMonsterDie() {
     if (this.isGameOver) return;
     this.isGameOver = true;
+    this.updateFinalStats()
 
     const user = FirebaseService.auth.currentUser;
     if (!user) return;
 
-    // 準備數據包
-    const finalStats = {
-      monster: this.monster.name,
-      nickname: this.charData.nickname,
-      clear: this.monster.status == "DEAD",
-      job: this.hero.job,
-      wpm: this.textInput.wpm,
-      dps: this.textInput.dps,
-      accuracy: this.textInput.accuracy,
-      maxCombo: this.textInput.maxCombo,
-      seconds: Math.floor(this.textInput.totalActiveTime / 1000)
-    };
-
     // 1. 執行畫面上提到的 "Save record into leaderboard"
-    FirebaseService.addBattleRecord(user.uid, finalStats);
+    FirebaseService.addBattleRecord(user.uid, this.finalStats);
 
     // 2. 更新角色的生涯數據 (Max WPM 等)
-    FirebaseService.updatePersonalBest(user.uid, finalStats);
+    FirebaseService.updatePersonalBest(user.uid, this.finalStats);
 
-    FirebaseService.updateLeaderboard(user.uid, finalStats);
+    FirebaseService.updateLeaderboard(user.uid, this.finalStats);
 
-    refreshLeaderboard("Kooni")
+    setTimeout(refreshLeaderboard("Kooni"), 2)
   }
 
   resetGame() {
@@ -150,6 +142,7 @@ export class BattleScene extends Scene {
     this.monster = this.createMonster();
     this.textInput = new TextInput();
     this.keyboard = new Keyboard();
+    this.finalStats = {};
     return
   }
 
@@ -420,7 +413,7 @@ export class BattleScene extends Scene {
     ctx.textAlign = "center";
     ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
     ctx.shadowBlur = 15;
-    ctx.fillText("You spend " + this.textInput.totalActiveTime / 1000 + "s", width / 2, height / 2 + 100);
+    ctx.fillText("You spend " + this.finalStats.seconds + "s", width / 2, height / 2 + 100);
     ctx.shadowBlur = 0; // 重置陰影
 
     ctx.fillStyle = "#fff";
@@ -452,7 +445,7 @@ export class BattleScene extends Scene {
     ctx.textAlign = "center";
     ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
     ctx.shadowBlur = 15;
-    ctx.fillText("You fell after " + this.textInput.totalActiveTime / 1000 + "s", width / 2, height / 2 + 100);
+    ctx.fillText("You fell after " + this.finalStats.seconds + "s", width / 2, height / 2 + 100);
     ctx.shadowBlur = 0; // 重置陰影
 
     ctx.fillStyle = "#d3d3d3";
@@ -471,10 +464,10 @@ export class BattleScene extends Scene {
 
     // 3. 繪製數據卡片 (Max Combo, WPM, DPS, Accuracy)
     const cardData = [
-      { label: "MAX COMBO", value: this.textInput.maxCombo, color: "#ffeb3b" },
-      { label: "WPM", value: this.textInput.wpm, color: "#03a9f4" },
-      { label: "DPS", value: this.textInput.dps, color: "#ff4500" },
-      { label: "ACCURACY", value: `${this.textInput.accuracy}%`, color: "#8bc34a" }
+      { label: "MAX COMBO", value: this.finalStats.maxCombo, color: "#ffeb3b" },
+      { label: "WPM", value: this.finalStats.wpm, color: "#03a9f4" },
+      { label: "DPS", value: this.finalStats.dps, color: "#ff4500" },
+      { label: "ACCURACY", value: `${this.finalStats.accuracy}%`, color: "#8bc34a" }
     ];
 
     const cardW = 140;
