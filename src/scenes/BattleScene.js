@@ -165,6 +165,8 @@ export class BattleScene extends Scene {
     this.textInput = new TextInput();
     this.keyboard = new Keyboard();
     this.finalStats = {};
+    this.isPaused = true;
+    this.newGame = true;
     return
   }
 
