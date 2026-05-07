@@ -11,6 +11,7 @@ import { EnemyFireball } from "../models/Projectile/EnemyFireball.js"
 import { FirebaseService } from '../services/firebase.js';
 import { UI } from '../ui/index.js';
 import { refreshLeaderboard } from '../ui/LeaderBoard.js';
+import { roundRect } from '../util.js';
 
 export class BattleScene extends Scene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
@@ -483,7 +484,7 @@ export class BattleScene extends Scene {
       // 繪製卡片背景 (磨砂玻璃感)
       ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
       ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-      this._roundRect(ctx, x, cardY, cardW, cardH, 12, true, true);
+      roundRect(ctx, x, cardY, cardW, cardH, 12, true, true);
 
       // 標籤文字
       ctx.font = "bold 14px 'Courier New'";
@@ -495,24 +496,5 @@ export class BattleScene extends Scene {
       ctx.fillStyle = data.color;
       ctx.fillText(data.value, x + cardW / 2, cardY + 75);
     });
-  }
-
-  /**
- * 輔助方法：繪製圓角矩形
- */
-  _roundRect(ctx, x, y, width, height, radius, fill, stroke) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-    if (fill) ctx.fill();
-    if (stroke) ctx.stroke();
   }
 }

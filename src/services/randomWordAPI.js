@@ -21,6 +21,7 @@ export async function fetchNewWordFromFile(fileName) {
         const response = await fetch(`./src/assets/${fileName}`);
         if (!response.ok) throw new Error("無法讀取單字檔");
         
+        if (fileName.includes("txt")) {
         const text = await response.text();
         
         // 分割行，並清理每行末尾的 \r 或空白，同時過濾掉空行
@@ -29,6 +30,10 @@ export async function fetchNewWordFromFile(fileName) {
             .filter(word => word.length > 0);
             
         return words;
+        } else {
+        const data = await response.json();
+        return Object.values(data);
+        }
     } catch (error) {
         console.error("載入單字表出錯:", error);
         return ["HERO", "MAGIC", "BATTLE"]; // 發生錯誤時的備用單字

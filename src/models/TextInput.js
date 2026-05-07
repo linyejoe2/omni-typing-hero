@@ -46,9 +46,6 @@ export class TextInput {
   async _fetchNewWord() {// 從已經緩存好的字典中抽字
     this.currentWord = dictionary.getRandomWord();
     this.typedIndex = 0;
-    // while (this.wordList.length < 5) {
-    //   this.wordList.push(await fetchNewWordFromFile("Oxford Phrasal Academic Lexicon.txt"));
-    // }
   }
 
   /**
