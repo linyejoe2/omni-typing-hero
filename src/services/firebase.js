@@ -92,15 +92,9 @@ export const FirebaseService = {
     if (stats.dps > (currentData.maxDps || 0)) updateData.maxDps = stats.dps;
     if (stats.maxCombo > (currentData.maxCombo || 0)) updateData.maxCombo = stats.maxCombo;
 
-    if (currentData.accuracy) {
-      updateData.accuracy = Math.round((currentData.accuracy + stats.accuracy) / 2 * 100) / 100;
-    } else {
-      updateData.accuracy = stats.accuracy
-    }
+    updateData.accuracy = calcAvg(currentData.accuracy, stats.accuracy, currentData.totalKills || 0)
 
-    if (currentData.wpm) {
-      updateData.wpm = (currentData.wpm + stats.wpm) / 2;
-    } else updateData.wpm = stats.wpm
+    updateData.wpm = calcAvg(currentData.wpm, stats.wpm, currentData.totalKills || 0)
 
     // 累計總擊殺數
     updateData.totalKills = (currentData.totalKills || 0) + 1;
@@ -113,6 +107,19 @@ export const FirebaseService = {
       }
     } catch (e) {
       console.error("個人資料更新失敗:", e);
+    }
+
+    function calcAvg(old = 0, new_ = 0, total = 0) {
+      if (!total || !old) return new_
+      if (!new_) return old
+      let newAvg = 0
+      if (total > 200) {
+        const alpha = 0.02;
+        newAvg = old * (1 - alpha) + new_ * alpha;
+      } else {
+        newAvg = ((old * total) + new_) / (total + 1);
+      }
+      return Math.round(newAvg * 100) / 100;
     }
   },
 
