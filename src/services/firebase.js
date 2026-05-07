@@ -3,6 +3,8 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, si
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, query, getDocs, where, orderBy, limit
 } from "firebase/firestore";
+import { refreshLeaderboard } from "../ui/LeaderBoard";
+import { UI } from "../ui";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBZaCBVpGAfGRMOvAlXuCIBUpn9dpGhPRc",
@@ -89,8 +91,8 @@ export const FirebaseService = {
 
     // 比較並決定是否更新最高紀錄
     updateData.maxWpm = Math.max(currentData.maxWpm || 0, stats.wpm);
-    if (stats.dps > (currentData.maxDps || 0)) updateData.maxDps = stats.dps;
-    if (stats.maxCombo > (currentData.maxCombo || 0)) updateData.maxCombo = stats.maxCombo;
+    updateData.maxCombo = Math.max(currentData.maxCombo || 0, stats.maxCombo);
+    updateData.maxDps = Math.max(currentData.maxDps || 0, stats.dps);
 
     updateData.accuracy = calcAvg(currentData.accuracy, stats.accuracy, currentData.totalKills || 0)
 
@@ -105,6 +107,7 @@ export const FirebaseService = {
         await updateDoc(charRef, updateData);
         console.log("🏆 個人成就已刷新！");
       }
+      UI.playerPanel.update(updateData) 
     } catch (e) {
       console.error("個人資料更新失敗:", e);
     }
@@ -148,6 +151,8 @@ export const FirebaseService = {
         });
         console.log("🏅 已刷新排行榜名次！");
       }
+
+      await refreshLeaderboard(stats.monster);
     } catch (e) {
       console.error("排行榜更新失敗", e);
     }

@@ -51,8 +51,8 @@ export class BattleScene extends Scene {
     // 重要：連結鍵盤與輸入邏輯
     this.keyboard.onKeyPress = async (char) => {
       if (this.isGameOver) {
-        const charData = await FirebaseService.getCharacter(FirebaseService.auth.currentUser.uid);
-        UI.playerPanel.update(charData)
+        // const charData = await FirebaseService.getCharacter(FirebaseService.auth.currentUser.uid);
+        // UI.playerPanel.update(charData)
         this.resetGame()
       };
 
@@ -131,8 +131,6 @@ export class BattleScene extends Scene {
     FirebaseService.updatePersonalBest(user.uid, this.finalStats);
 
     FirebaseService.updateLeaderboard(user.uid, this.finalStats);
-
-    setTimeout(refreshLeaderboard("Kooni"), 2)
   }
 
   resetGame() {
