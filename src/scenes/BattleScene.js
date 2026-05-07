@@ -46,17 +46,39 @@ export class BattleScene extends Scene {
 
     this.finalStats = {};
 
+    this.isPaused = true;
+    this.newGame = true;
+
     refreshLeaderboard("Kooni")
 
     // 重要：連結鍵盤與輸入邏輯
-    this.keyboard.onKeyPress = async (char) => {
+    this.keyboard.onKeyPress = async (key) => {
+
+      this.newGame = false;
+
+      if (key === "Escape") {
+        if (!this.isPaused) {
+          this.pauseGame();
+        } else {
+          this.resumeGame();
+        }
+        return;
+      }
+
+      if (this.isPaused) {
+        if (key === " ") {
+          this.resumeGame();
+        }
+        return; // 暫停時不處理其他戰鬥按鍵
+      }
+
       if (this.isGameOver) {
         // const charData = await FirebaseService.getCharacter(FirebaseService.auth.currentUser.uid);
         // UI.playerPanel.update(charData)
         this.resetGame()
+        return
       };
-
-      const result = this.textInput.handleInput(char);
+      const result = this.textInput.handleInput(key);
 
       if (result.includes("WORD_COMPLETE")) {
         // 單字完成！英雄發動攻擊
@@ -148,6 +170,13 @@ export class BattleScene extends Scene {
 
   // 1. 邏輯更新：處理物理、碰撞、計數
   update() {
+    if (this.isPaused) return;
+
+    if (this.isGameOver && this.restartTimer) {
+      this.restartTimer--
+      return
+    }
+
     this.monster.update();
     this.hero.update();
     this.keyboard.update();
@@ -217,10 +246,6 @@ export class BattleScene extends Scene {
 
     // 怪物死亡
     if (this.monster.status == "DEAD") this.onMonsterDie()
-
-    if (this.isGameOver && this.restartTimer) {
-      this.restartTimer--
-    }
   }
 
   // 2. 畫面繪製：只負責畫圖
@@ -271,6 +296,8 @@ export class BattleScene extends Scene {
 
     // 3. 繪製底部的虛擬鍵盤
     this.keyboard.draw(ctx);
+
+    if (this.isPaused) this.drawPause(ctx)
 
     if (this.isGameOver) this.isGameCleared() ? this.drawGameClear(ctx) : this.drawGameOver(ctx)
 
@@ -495,5 +522,78 @@ export class BattleScene extends Scene {
       ctx.fillStyle = data.color;
       ctx.fillText(data.value, x + cardW / 2, cardY + 75);
     });
+  }
+
+  pauseGame() {
+    this.isPaused = true;
+  }
+
+  resumeGame() {
+    this.isPaused = false;
+  }
+
+  handleMouseDown(e) {
+    if (this.isPaused) {
+      this.resumeGame();
+    }
+  }
+
+  drawPause(ctx) {
+    const width = CONFIG.width
+    const height = CONFIG.height
+
+    // 1. 背景遮罩 (使用深藍色或深紫色，與死亡的紅色區隔)
+    ctx.save();
+    ctx.fillStyle = "rgba(10, 10, 25, 0.85)";
+    ctx.fillRect(0, 0, width, height);
+
+    // 2. 標題：TIME STOPPED
+    ctx.fillStyle = "#00d4ff"; // 魔法藍
+    ctx.font = "bold 45px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "#00d4ff";
+    ctx.shadowBlur = 15;
+    ctx.fillText(this.newGame ? "準備遊戲" : "暫停", width / 2, height / 2 - 100);
+    ctx.shadowBlur = 0;
+
+    // 3. 繪製 Tips 框
+    const tipBoxW = 400;
+    const tipBoxH = 80;
+    const boxX = width / 2 - tipBoxW / 2;
+    const boxY = height / 2 - 30;
+
+    ctx.strokeStyle = "#444";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(boxX, boxY, tipBoxW, tipBoxH);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.fillRect(boxX, boxY, tipBoxW, tipBoxH);
+
+    const tipses = [
+      "打字擊敗怪物",
+      "中間綠色能量條集滿 = 狂暴",
+      "按下 ESC 可以暫停"
+    ]
+
+    // 4. 顯示隨機 Tip (建議在進入暫停時先選定一個 index，避免 draw loop 每一幀都隨機換)
+    ctx.fillStyle = "#d3d3d3";
+    ctx.font = "14px 'Courier New'";
+    // 假設你將選好的 tip 存在 this.currentTip
+    // const tipText = "Tip: 保持節奏比單純求快更能提高 DPS。";
+    tipses.forEach((tips, i) => {
+      ctx.fillText(tips, width / 2, boxY + (25 + i * 20));
+    })
+
+    // 5. 繼續提示
+    // 這裡做一個簡單的呼吸燈效果
+    const alpha = Math.abs(Math.sin(Date.now() / 500));
+    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+    ctx.font = "20px 'Courier New'";
+    ctx.fillText(this.newGame ? "按下空白鍵開始戰鬥" : "按下空白鍵繼續", width / 2, height / 2 + 120);
+
+    // ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    // ctx.font = "12px 'Courier New'";
+    // ctx.fillText("(Click anywhere to continue)", width / 2, height / 2 + 150);
+
+    ctx.restore();
   }
 }

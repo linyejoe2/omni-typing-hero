@@ -28,7 +28,8 @@ export class Keyboard {
     this.transMap = {
       "Control": "Ctrl",
       "CapsLock": "Caps",
-      " ": "Space"
+      " ": "Space",
+      "Escepe": "ESC",
     }
 
     // // 初始化所有字母鍵與特殊鍵
@@ -63,11 +64,11 @@ export class Keyboard {
       if (!e.key) return;
       let key = e.key;
 
-      key = key in this.transMap ? this.transMap[key] : key;
+      const displayKey = key in this.transMap ? this.transMap[key] : key;
 
-      if (this.keys[key]) {
-        this.keys[key].pressed = true;
-        this.keys[key].animation = 1.0; // 動態啟動 (1.0 代表 100% 亮度)
+      if (this.keys[displayKey]) {
+        this.keys[displayKey].pressed = true;
+        this.keys[displayKey].animation = 1.0; // 動態啟動 (1.0 代表 100% 亮度)
       }
 
       // 處理 Shift 邏輯
@@ -89,11 +90,11 @@ export class Keyboard {
       this.isCaps = e.getModifierState("CapsLock");
 
       const isChar = /^[ -~]+$/.test(key);
-      if (key.length > 1 || !isChar) return;
-
-      if (this.onKeyPress) {
-        this.lastKeyPressed = key;
-        this.onKeyPress(key);
+      if (key.length < 1 || isChar || key == "Escape") {
+        if (this.onKeyPress) {
+          this.lastKeyPressed = key;
+          this.onKeyPress(key);
+        }
       }
     });
 
