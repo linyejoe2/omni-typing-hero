@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build"
   },
   "repository": {
     "type": "git",
@@ -16,5 +17,11 @@
   "bugs": {
     "url": "https://github.com/linyejoe2/omni-typing-hero/issues"
   },
-  "homepage": "https://github.com/linyejoe2/omni-typing-hero#readme"
+  "homepage": "https://github.com/linyejoe2/omni-typing-hero#readme",
+  "devDependencies": {
+    "vite": "^8.0.10"
+  },
+  "dependencies": {
+    "firebase": "^12.12.1"
+  }
 }

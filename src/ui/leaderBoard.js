@@ -30,20 +30,20 @@ export async function refreshLeaderboard(monsterId) {
     }
 
     row.innerHTML = `
-            <div class="col-rank">${index + 1}</div>
-            <div class="col-player">
-                <div class="canvas-container"></div> <!-- 放置剛才畫好的 canvas -->
-                <div>
-                    <strong>${data.nickname || 'Unknown'}</strong>
-                    <span class="timestamp">${dateStr}</span>
-                </div>
-            </div>
-            <div class="col-time">${data.seconds}s</div>
-            <div class="col-stats">
-                DPS: ${data.dps}<br>
-                WPM: ${data.wpm}<br>
-                ACC: ${data.accuracy}%
-            </div>
+<div class="col-rank">${index + 1}</div>
+<div class="col-player">
+    <div class="canvas-container"></div>
+    <div>
+        <strong>${data.nickname || 'Unknown'}</strong>
+        <span class="timestamp">${dateStr}</span>
+    </div>
+</div>
+<div class="col-time">${data.seconds}s</div>
+<div class="col-stats">
+    DPS: ${data.dps}<br>
+    WPM: ${data.wpm}<br>
+    ACC: ${data.accuracy}%
+</div>
         `;
 
     // 將 Canvas 插入對應位置
