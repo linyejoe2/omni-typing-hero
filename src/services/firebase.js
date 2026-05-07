@@ -93,7 +93,7 @@ export const FirebaseService = {
     if (stats.maxCombo > (currentData.maxCombo || 0)) updateData.maxCombo = stats.maxCombo;
 
     if (currentData.accuracy) {
-      updateData.accuracy = (currentData.accuracy + stats.accuracy) / 2;
+      updateData.accuracy = Math.round((currentData.accuracy + stats.accuracy) / 2 * 100) / 100;
     } else {
       updateData.accuracy = stats.accuracy
     }

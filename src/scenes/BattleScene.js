@@ -77,7 +77,7 @@ export class BattleScene extends Scene {
       job: this.hero.job,
       wpm: this.textInput.wpm,
       dps: this.textInput.dps,
-      accuracy: this.textInput.accuracy,
+      accuracy: Math.round(this.textInput.accuracy * 100) / 100,
       maxCombo: this.textInput.maxCombo,
       seconds: Math.round(this.textInput.totalActiveTime * 10) / 10000
     };
