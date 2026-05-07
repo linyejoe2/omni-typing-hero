@@ -7,7 +7,7 @@ import { refreshLeaderboard } from "../ui/LeaderBoard";
 import { UI } from "../ui";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBZaCBVpGAfGRMOvAlXuCIBUpn9dpGhPRc",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "omni-typing-hero.firebaseapp.com",
   projectId: "omni-typing-hero",
   storageBucket: "omni-typing-hero.firebasestorage.app",

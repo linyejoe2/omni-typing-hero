@@ -18,7 +18,7 @@ export async function fetchNewWord() {
  */
 export async function fetchNewWordFromFile(fileName) {
     try {
-        const response = await fetch(`./src/assets/${fileName}`);
+        const response = await fetch(`./assets/${fileName}`);
         if (!response.ok) throw new Error("無法讀取單字檔");
         
         if (fileName.includes("txt")) {

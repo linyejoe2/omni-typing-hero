@@ -9,7 +9,8 @@ class DictionaryManager {
   }
 
   async init() {
-    this.words = await fetchNewWordFromFile('cl100k_base_vocab.json');
+    this.words = await fetchNewWordFromFile('Oxford 5000.txt');
+    // this.words = await fetchNewWordFromFile('cl100k_base_vocab.json');
     this.isReady = true;
   }
 
