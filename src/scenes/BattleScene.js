@@ -75,6 +75,7 @@ export class BattleScene extends Scene {
       nickname: this.charData.nickname,
       clear: this.monster.status == "DEAD",
       job: this.hero.job,
+      gender: this.hero.gender,
       wpm: this.textInput.wpm,
       dps: this.textInput.dps,
       accuracy: Math.round(this.textInput.accuracy * 100) / 100,

@@ -9,5 +9,5 @@ export const CONFIG = {
   monsterMaxHP: 10,
   maxHearts: 3,
   rageThreshold: 5, // 打錯 5 次觸發反擊
-  groundY: 330
+  groundY: 280, // 地面的高度 (分開戰鬥區跟鍵盤區)
 };

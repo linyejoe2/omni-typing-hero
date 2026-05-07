@@ -52,7 +52,7 @@ export class Keyboard {
 
     // 視覺位置 (放在對戰區與鍵盤區中間)
     this.x = CONFIG.width / 2; // 假設畫布寬 800，置中為 400
-    this.y = CONFIG.height * 0.75 - 40;
+    this.y = CONFIG.groundY + 80;
 
     // 3. 綁定事件監聽
     this.initEventListeners();
@@ -149,7 +149,7 @@ export class Keyboard {
     ctx.save();
     ctx.textAlign = "center";
 
-    const keySize = 25;
+    const keySize = 30;
     const spacing = 6; // 稍微縮小間距，讓 80% 鍵盤不會太寬
 
     // 寬度定義表 (以 keySize 為單位的倍數)

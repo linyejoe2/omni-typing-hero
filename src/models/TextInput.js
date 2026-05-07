@@ -26,7 +26,7 @@ export class TextInput {
 
     // 視覺位置 (放在對戰區與鍵盤區中間)
     this.x = config.x || CONFIG.width / 2; // 假設畫布寬 800，置中為 400
-    this.y = config.y || CONFIG.height * 0.65;
+    this.y = CONFIG.groundY + 63;
 
     // 初始獲取單字
     this._fetchNewWord();
@@ -176,7 +176,7 @@ export class TextInput {
   draw(ctx) {
     ctx.save();
     ctx.fillStyle = "#0a0a0a";
-    ctx.fillRect(0, CONFIG.groundY, CONFIG.width, 300);
+    ctx.fillRect(0, CONFIG.groundY, CONFIG.width, 600);
     ctx.textAlign = "center";
     ctx.font = "bold 40px 'Courier New'";
 
@@ -196,7 +196,7 @@ export class TextInput {
       let t = word[i]
       if (word[i] == " " && i < this.typedIndex) t = "_"
 
-      ctx.fillText(t, startX + i * letterSpacing, this.y);
+      ctx.fillText(t, startX + i * letterSpacing, this.y - 6);
     }
     ctx.restore();
 
@@ -208,7 +208,7 @@ export class TextInput {
     ctx.save();
     // 顯示在鍵盤左側 (參考你之前 Keyboard 的 x, y)
     const statsX = 10;
-    const statsY = CONFIG.height * 0.6;
+    const statsY = CONFIG.groundY + 40;
 
     ctx.textAlign = "left";
     ctx.font = "16px 'Courier New'";

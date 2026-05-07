@@ -5,6 +5,7 @@ import { FirebaseService } from './services/firebase.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { CONFIG } from './CONST.js';
 import { audioManager } from './services/AudioManager.js';
+import { generateFavicon } from './ui/favicon.js';
 
 const sceneManager = new SceneManager();
 
@@ -68,6 +69,7 @@ class App {
     this.game = new GameLoop()
 
     audioManager.init();
+    generateFavicon();
   }
 
   // 監聽 Firebase 登入狀態

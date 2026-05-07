@@ -107,7 +107,7 @@ export const FirebaseService = {
         await updateDoc(charRef, updateData);
         console.log("🏆 個人成就已刷新！");
       }
-      UI.playerPanel.update(updateData) 
+      UI.playerPanel.update((await getDoc(charRef)).data()) 
     } catch (e) {
       console.error("個人資料更新失敗:", e);
     }
@@ -142,6 +142,7 @@ export const FirebaseService = {
           uid: uid,
           monster: stats.monster,
           nickname: stats.nickname,
+          gender: stats.gender,
           wpm: stats.wpm,
           dps: stats.dps,
           seconds: stats.seconds,
