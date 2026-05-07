@@ -83,7 +83,7 @@
   </div>
 
 
-  <div id="auth-screen">
+  <div id="authScreen">
     <div class="auth-box">
       <h1>像素冒險</h1>
       <input type="email" id="email" placeholder="信箱">
@@ -93,7 +93,7 @@
     </div>
   </div>
 
-  <div id="char-creator" class="hidden">
+  <div id="charCreatorScreen" class="hidden">
     <h2>創建角色</h2>
     <input type="text" id="nickname" placeholder="冒險者名稱">
     <select id="job-select">
@@ -109,12 +109,9 @@
     <button id="btn-start">啟動</button>
   </div>
 
-  <div id="game-screen" class="hidden">
+  <div id="gameScreen" class="hidden">
+    <!-- <div id="pauseHint">ESC 暫停</div> -->
     <canvas id="gameCanvas"></canvas>
-    <div class="game-ui">
-      <div id="word-display"></div>
-      <div id="status-bar"></div>
-    </div>
   </div>
 
   <script type="module" src="src/main.js"></script>

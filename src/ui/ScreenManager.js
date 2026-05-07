@@ -1,9 +1,9 @@
 export class ScreenManager {
     constructor() {
         this.screens = {
-            auth: document.getElementById('auth-screen'),
-            creator: document.getElementById('char-creator'),
-            game: document.getElementById('game-screen')
+            auth: document.getElementById('authScreen'),
+            creator: document.getElementById('charCreatorScreen'),
+            game: document.getElementById('gameScreen')
         };
     }
 

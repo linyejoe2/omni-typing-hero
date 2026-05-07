@@ -15,7 +15,7 @@ body {
   overflow: hidden;
 }
 
-#game-screen {
+#gameScreen {
   box-shadow: 0 0 50px rgba(255, 69, 0, 0.2);
   border: 4px solid #8b0000;
   line-height: 0;
@@ -50,20 +50,21 @@ canvas {
   gap: 8px;
   padding: 10px 18px;
   cursor: pointer;
-  
+
   /* 現代磨砂玻璃效果 */
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); /* 確保 Safari 相容性 */
+  -webkit-backdrop-filter: blur(10px);
+  /* 確保 Safari 相容性 */
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50px;
-  
+
   /* 文字樣式 */
   color: white;
   font-family: 'Courier New', Courier, monospace;
   font-weight: bold;
   text-decoration: none;
-  
+
   /* 動畫與陰影 */
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
@@ -223,11 +224,12 @@ canvas {
   line-height: 1.8;
 }
 
-#game-layout {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-}
+/* #pauseHint {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+} */
 
 #leaderboard-side {
   position: fixed;
