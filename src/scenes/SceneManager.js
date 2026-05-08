@@ -1,25 +1,29 @@
 export class SceneManager {
-    constructor() {
-        this.currentScene = null;
-    }
 
-    // 切換場景，並傳入角色資料
-    switchTo(sceneInstance) {
-        if (this.currentScene && this.currentScene.exit) {
-            this.currentScene.exit();
-        }
-        this.currentScene = sceneInstance;
-        if (this.currentScene.init) {
-            this.currentScene.init();
-        }
-    }
+  constructor() {
+    console.log("create SceneManager")
+    this.currentScene = null;
+  }
 
-    // 這是由 Game Loop 持續呼叫的入口
-    update() {
-        if (this.currentScene) this.currentScene.update();
+  // 切換場景，並傳入角色資料
+  switchTo(sceneInstance) {
+    if (this.currentScene && this.currentScene.exit) {
+      this.currentScene.exit();
     }
+    this.currentScene = sceneInstance;
+    if (this.currentScene.init) {
+      this.currentScene.init();
+    }
+  }
 
-    draw(ctx) {
-        if (this.currentScene) this.currentScene.draw(ctx);
-    }
+  // 這是由 Game Loop 持續呼叫的入口
+  update() {
+    if (this.currentScene) this.currentScene.update();
+  }
+
+  draw(ctx) {
+    if (this.currentScene) this.currentScene.draw(ctx);
+  }
 }
+
+export const sceneManager = new SceneManager();

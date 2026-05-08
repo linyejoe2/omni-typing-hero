@@ -1,29 +1,17 @@
 import { UI } from './ui/index.js';
 import { BattleScene } from './scenes/BattleScene.js';
-import { SceneManager } from './scenes/SceneManager.js';
+import { sceneManager } from './scenes/SceneManager.js';
 import { FirebaseService } from './services/firebase.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { CONFIG } from './CONST.js';
 import { audioManager } from './services/AudioManager.js';
 import { generateFavicon } from './ui/favicon.js';
-
-const sceneManager = new SceneManager();
+import { AuthScene } from './scenes/AuthScene.js';
+import { CreatorScene } from './scenes/CreatorScene.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = CONFIG.width;
 canvas.height = CONFIG.height;
-
-// function gameLoop() {
-//   // 1. 處理邏輯
-//   sceneManager.update();
-
-//   // 2. 渲染畫面
-//   ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-//   sceneManager.draw(ctx);
-
-//   requestAnimationFrame(gameLoop);
-// }
 
 class GameLoop {
   constructor() {
@@ -64,100 +52,13 @@ class GameLoop {
 
 class App {
   constructor() {
-    this.initEventListeners();
-    this.checkAuthState();
-    this.game = new GameLoop()
+    this.game = new GameLoop();
+
+    sceneManager.switchTo(new AuthScene());
 
     audioManager.init();
-    generateFavicon();
-  }
-
-  // 監聽 Firebase 登入狀態
-  checkAuthState() {
-    onAuthStateChanged(FirebaseService.auth, async (user) => {
-      if (user) {
-        console.log("用戶已登入:", user.email);
-        await this.handlePostLogin(user.uid);
-      } else {
-        UI.showScreen('auth');
-      }
-    });
-  }
-
-  // 登入後的處理邏輯
-  async handlePostLogin(uid) {
-    try {
-      const charData = await FirebaseService.getCharacter(uid);
-
-      if (charData) {
-        // 如果有角色資訊，直接進入遊戲
-        console.log("發現角色，啟動遊戲...");
-        this.startActualGame(charData);
-      } else {
-        // 沒有角色資訊，跳轉到創建頁面
-        console.log("無角色資訊，前往創建頁面");
-        UI.showScreen('creator');
-      }
-    } catch (error) {
-      console.error("檢查角色失敗:", error);
-    }
-  }
-
-  initEventListeners() {
-    // 登入邏輯
-    UI.on('btn-login', 'click', async () => {
-      const { email, pass } = UI.getInputs();
-      try {
-        const user = await FirebaseService.login(email, pass);
-        const charData = await FirebaseService.getCharacter(user.uid);
-
-        if (charData) {
-          UI.showScreen('game');
-        } else {
-          UI.showScreen('creator');
-        }
-      } catch (err) {
-        alert("登入失敗: " + err.message);
-      }
-    });
-
-    // 註冊按鈕
-    document.getElementById('btn-signup').addEventListener('click', async () => {
-      const { email, pass } = UI.getInputs();
-      try {
-        await FirebaseService.signUp(email, pass);
-        alert("註冊成功！");
-      } catch (e) { alert("註冊失敗: " + e.message); }
-    });
-
-    // 創建角色並開始按鈕
-    document.getElementById('btn-start').addEventListener('click', async () => {
-      const { nickname, job, gender } = UI.getInputs();
-      if (!nickname) return alert("請輸入名稱");
-
-      const charData = {
-        nickname,
-        job,
-        gender,
-        level: 1,
-        gold: 0,
-        createdAt: new Date()
-      };
-
-      const user = FirebaseService.auth.currentUser;
-      if (user) {
-        await FirebaseService.saveCharacter(user.uid, charData);
-        this.startActualGame(charData);
-      }
-    });
-  }
-
-  startActualGame(charData) {
-    UI.showScreen('game');
-    sceneManager.switchTo(new BattleScene(canvas, charData));
-    UI.playerPanel.update(charData);
     this.game.start();
-    console.log("遊戲開始！角色：", charData.nickname);
+    generateFavicon();
   }
 }
 
