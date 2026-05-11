@@ -40,7 +40,7 @@ export class AuthScene {
 
   startActualGame(charData) {
     UI.showScreen('game');
-    sceneManager.switchTo(new BattleScene(canvas, charData));
+    sceneManager.switchTo(new BattleScene(this.canvas, charData));
     UI.playerPanel.update(charData);
     console.log("遊戲開始！角色：", charData.nickname);
   }
@@ -69,9 +69,9 @@ export class AuthScene {
 
       if (charData) {
         // 直接透過 sceneManager 切換，這會自動觸發當前場景的 exit()
-        sceneManager.switchTo(new BattleScene(canvas, charData));
+        sceneManager.switchTo(new BattleScene(this.canvas, charData));
       } else {
-        sceneManager.switchTo(new CreatorScene(canvas));
+        sceneManager.switchTo(new CreatorScene(this.canvas));
       }
     } catch (err) {
       alert("登入失敗: " + err.message);
