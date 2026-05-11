@@ -43,6 +43,10 @@ export const FirebaseService = {
   },
   // 獲取角色資料
   async getCharacter(uid) {
+    if (!uid && this.currentUser) {
+      uid = this.currentUser.uid;
+    }
+    if (!uid) return null;
     const docRef = doc(db, "characters", uid);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? docSnap.data() : null;

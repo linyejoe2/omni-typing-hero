@@ -1,15 +1,8 @@
-import { ScreenManager } from './ScreenManager.js';
 import { PlayerPanel } from './PlayerPanel.js';
 
 class UIBase {
     constructor() {
-        this.screens = new ScreenManager();
         this.playerPanel = new PlayerPanel();
-    }
-
-    // 重新封裝原本的 showScreen
-    showScreen(id) {
-        this.screens.show(id);
     }
 
     // 獲取所有輸入框資料
@@ -18,8 +11,8 @@ class UIBase {
             email: document.getElementById('email').value,
             pass: document.getElementById('password').value,
             nickname: document.getElementById('nickname').value,
-            job: document.getElementById('job-select').value,
-            gender: document.getElementById('gender-select').value
+            job: document.getElementById('jobSelect').value,
+            gender: document.getElementById('genderSelect').value
         };
     }
 

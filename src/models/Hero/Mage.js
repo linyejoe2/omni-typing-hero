@@ -8,12 +8,11 @@ export class Mage extends BaseHero {
     this.floatOffset = 0;
 
     // 基礎屬性
-    this.maxAtk = 25;
-    this.maxHp = 80;
-    this.critRate = 0.05;
-    this.pDef = 10;
-    this.mRes = 10;
-    this.evaRate = 0.03;
+    this.baseHpLevel = 0;
+    this.baseAtkLevel = 6;
+    this.baseCritRateLevel = 6;
+    this.baseDefLevel = 0;
+    this.baseEvaRateLevel = 3;
 
     // 根據性別設定像素裝飾色
     this.palette = {
@@ -34,18 +33,26 @@ export class Mage extends BaseHero {
     * 例如法師的 ATK 成長率高，而戰士的 HP 成長率高。
     */
     this.growthRates = {
-      atk: 3,      // 每級固定增加的攻擊力
-      crit: 0.005,  // 每級固定增加的爆擊率 (0.5%)
       hp: 5,      // 每級固定增加的血量
-      def: 0.2,    // 每級固定增加的物防
-      res: 0.5,    // 每級固定增加的魔防
+      atk: 4,      // 每級固定增加的攻擊力
+      crit: 0.02,  // 每級固定增加的爆擊率 (0.5%)
+      def: 0.001,    // 每級固定增加的物防
       eva: 0.006    // 每級固定增加的閃避率 (0.5%)
     };
 
     this.updateFinalStats();
 
     // 重新計算後，確保當前血量補滿
-    this.hp = this.maxHp;
+    this.hp = this.baseHpLevel;
+
+    console.log(`
+      目前屬性
+      HP: ${this.hp}
+      ATK: ${this.atk}
+      CRI: ${this.critRate}
+      DEF: ${this.def}
+      EVA: ${this.evaRate}
+      `)
   }
 
   update() {
@@ -54,41 +61,41 @@ export class Mage extends BaseHero {
     this.floatOffset = Math.sin(Date.now() * 0.003) * 3;
   }
 
-  renderHero(ctx) {
-    const yOff = this.floatOffset;
+  renderHero(ctx, xOffset = 0, yOffset = 0) {
+    const yOff = this.floatOffset + yOffset;
 
     // 1. 法袍 (身體)
     ctx.fillStyle = this.palette.primary;
-    ctx.fillRect(-15, -45 + yOff, 30, 45);
+    ctx.fillRect(-15 + xOffset, -45 + yOff, 30, 45);
 
     // 2. 臉部
     ctx.fillStyle = this.palette.skin;
-    ctx.fillRect(-10, -40 + yOff, 20, 15);
+    ctx.fillRect(-10 + xOffset, -40 + yOff, 20, 15);
 
     // 3. 性別差異特徵
     if (this.gender === 'FEMALE') {
       // 女法師：長髮裝飾或蝴蝶結
       ctx.fillStyle = this.palette.deco;
-      ctx.fillRect(-15, -42 + yOff, 5, 25);
-      ctx.fillRect(10, -42 + yOff, 5, 25);
+      ctx.fillRect(-15 + xOffset, -42 + yOff, 5, 25);
+      ctx.fillRect(10 + xOffset, -42 + yOff, 5, 25);
     } else {
       // 男法師：斗篷領口或簡單帽子
       ctx.fillStyle = "#1c2630";
-      ctx.fillRect(-15, -42 + yOff, 5, 15);
-      ctx.fillRect(10, -42 + yOff, 5, 15);
+      ctx.fillRect(-15 + xOffset, -42 + yOff, 5, 15);
+      ctx.fillRect(10 + xOffset, -42 + yOff, 5, 15);
       ctx.fillStyle = this.palette.deco;
-      ctx.fillRect(-3, -46 + yOff, 7, 4);
+      ctx.fillRect(-3 + xOffset, -46 + yOff, 7, 4);
     }
 
     // 4. 眼睛
     ctx.fillStyle = this.palette.eye;
-    ctx.fillRect(-5, -35 + yOff, 2, 2);
-    ctx.fillRect(3, -35 + yOff, 2, 2);
+    ctx.fillRect(-5 + xOffset, -35 + yOff, 2, 2);
+    ctx.fillRect(3 + xOffset, -35 + yOff, 2, 2);
 
     // 5. 繪製武器 (法杖)
     if (this.weapon) {
       ctx.save();
-      ctx.translate(15, -20 + yOff);
+      ctx.translate(15 + xOffset, -20 + yOff);
       const weaponAngle = (this.state === 'ATTACKING') ? 0.5 : 0;
       ctx.rotate(weaponAngle);
       this.weapon.renderWeapon(ctx);

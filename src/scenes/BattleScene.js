@@ -314,7 +314,7 @@ export class BattleScene extends Scene {
     const infoY = 25;  // Rage Bar 下方的起始高度
 
     ctx.fillStyle = "#333"; ctx.fillRect(infoX, infoY, bw, bh);
-    ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.hp / this.hero.maxHp)) * bw, bh);
+    ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.hp / this.hero.baseHpLevel)) * bw, bh);
     ctx.strokeStyle = "#d4af37"; ctx.strokeRect(infoX, infoY, bw, bh);
     // 繪製血量文字 (置中)
     ctx.save();
@@ -326,7 +326,7 @@ export class BattleScene extends Scene {
     // 設定文字在血條的正中央
     const textX = infoX + bw / 2;
     const textY = infoY + bh / 2 + 1; // +1 是為了視覺上的微調補償
-    const hpText = `${Math.ceil(this.hero.hp)} / ${this.hero.maxHp}`;
+    const hpText = `${Math.ceil(this.hero.hp)} / ${this.hero.baseHpLevel}`;
 
     // 選擇性：加上深色描邊讓數字更清晰 (防止在紅色背景下看不清楚)
     ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";

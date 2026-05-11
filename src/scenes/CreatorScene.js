@@ -2,12 +2,28 @@ import { FirebaseService } from '../services/firebase.js';
 import { UI } from '../ui/index.js';
 import { BattleScene } from './BattleScene.js';
 import { sceneManager } from './SceneManager.js';
+import { canvasManager } from '../ui/CanvasManager.js';
+import { Mage } from '../models/Hero/Mage.js';
+import { baseAttributeLevelList } from '../models/Hero/BaseHero.js';
 
 export class CreatorScene {
   constructor() {
-    this.canvas = document.getElementById('gameCanvas');
+    this.canvas = canvasManager.get("creatorCanvas");
     this.creatorScreen = document.getElementById('creatorScreen'); // 確保 HTML 有這個 ID
     this.startBtn = document.getElementById('btn-start');
+    this.jobDefaultAttributeList = document.getElementById("jobDefaultAttributeList");
+    this.charData = {
+      nickname,
+      job: "mage",
+      gender: "male",
+      level: 1,
+      gold: 0,
+      hp: 100, // 初始血量
+      exp: 0,
+      createdAt: new Date()
+    };
+
+    this.previewHero = new Mage(this.charData);
 
     this.handleCreate = this.handleCreate.bind(this);
   }
@@ -26,22 +42,11 @@ export class CreatorScene {
     const { nickname, job, gender } = UI.getInputs();
     if (!nickname) return alert("請輸入冒險者名稱");
 
-    const charData = {
-      nickname,
-      job,
-      gender,
-      level: 1,
-      gold: 0,
-      hp: 100, // 初始血量
-      exp: 0,
-      createdAt: new Date()
-    };
-
     const user = FirebaseService.auth.currentUser;
     if (user) {
       try {
         // 1. 儲存到 Firebase
-        await FirebaseService.saveCharacter(user.uid, charData);
+        await FirebaseService.saveCharacter(user.uid, this.charData);
         console.log("角色創建成功！");
 
         // 2. 切換到戰鬥場景 (或其他初始場景)
@@ -49,7 +54,7 @@ export class CreatorScene {
         sceneManager.switchTo(new BattleScene(canvas));
 
         // 3. 更新全域 UI 狀態
-        UI.playerPanel.update(charData);
+        UI.playerPanel.update(this.charData);
       } catch (error) {
         alert("角色儲存失敗: " + error.message);
       }
@@ -58,16 +63,28 @@ export class CreatorScene {
 
   update() {
     // 如果有 Canvas 背景動畫（例如角色預覽旋轉），在這裡更新
+    this.previewHero.update();
+
+
+    this.jobDefaultAttributeList.innerHTML = `
+            <div>VIT: </div><div class="progress-bar"><div class="progress-fill" style="width: ${this.previewHero.baseHpLevel / baseAttributeLevelList.hp[4]}%;"></div></div>
+            <div>STR: </div><div class="progress-bar"><div class="progress-fill" style="width: ${this.previewHero.baseHpLevel || 0}%;"></div></div>
+            <div>CRI: </div><div class="progress-bar"><div class="progress-fill" style="width: ${this.previewHero.baseHpLevel || 0}%;"></div></div>
+            <div>DEF: </div><div class="progress-bar"><div class="progress-fill" style="width: ${this.previewHero.baseHpLevel || 0}%;"></div></div>
+            <div>RES: </div><div class="progress-bar"><div class="progress-fill" style="width: ${this.previewHero.baseHpLevel || 0}%;"></div></div>
+            <div>AGI: </div><div class="progress-bar"><div class="progress-fill" style="width: ${this.previewHero.baseHpLevel || 0}%;"></div></div>
+    `
   }
 
-  draw(ctx) {
-    // 可以在 Canvas 畫一些帥氣的角色職業立繪或背景
-    ctx.fillStyle = "#1a1a1a";
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  draw(_) {
+    this.canvas.clearRect(0, 0, this.canvas.canvas.width, this.canvas.canvas.height);
+    this.canvas.save();
+    this.drawHeroPreview()
+    this.canvas.restore();
+  }
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "20px 'Press Start 2P', cursive"; // 假設你有像素字體
-    ctx.fillText("CREATE YOUR HERO", 50, 50);
+  drawHeroPreview() {
+    return (this.previewHero).renderHero(this.canvas, this.canvas.canvas.width / 2, this.canvas.canvas.height / 2 + 30);
   }
 
   exit() {

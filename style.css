@@ -1,5 +1,11 @@
+/* #region Global */
+
 .hidden {
   display: none;
+}
+
+* {
+  font-family: 'Courier New', Courier, monospace;
 }
 
 body {
@@ -15,30 +21,10 @@ body {
   overflow: hidden;
 }
 
-#gameScreen {
-  box-shadow: 0 0 50px rgba(255, 69, 0, 0.2);
-  border: 4px solid #8b0000;
-  line-height: 0;
-  position: relative;
-  width: 50vw;
-  height: 65vh;
-}
-
-#gameCanvas {
-  width: 50vw;
-  height: 65vh;
-}
-
 canvas {
-  background-color: #1c2630;
+  background-color: rgb(30, 30, 30);
+  /* background-color: #1c2630; */
   image-rendering: pixelated;
-}
-
-.instructions {
-  margin-top: 20px;
-  color: #d4af37;
-  font-size: 14px;
-  text-shadow: 1px 1px #000;
 }
 
 /* 所有按鈕通用的基礎樣式 */
@@ -49,6 +35,7 @@ canvas {
   justify-content: center;
   gap: 8px;
   padding: 10px 18px;
+  margin-top: 10px;
   cursor: pointer;
 
   /* 現代磨砂玻璃效果 */
@@ -57,7 +44,7 @@ canvas {
   -webkit-backdrop-filter: blur(10px);
   /* 確保 Safari 相容性 */
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50px;
+  border-radius: 10px;
 
   /* 文字樣式 */
   color: white;
@@ -68,6 +55,8 @@ canvas {
   /* 動畫與陰影 */
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  /* 讓按鈕在手機端或窄面板更好看 */
   outline: none;
 }
 
@@ -78,47 +67,23 @@ canvas {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
+.btn-primary {
+  background: rgba(230, 126, 34, 0.6);
+  /* 使用較亮的橘色作為主要按鈕 */
+  border-color: rgba(230, 126, 34, 0.8);
+}
+
+.btn-primary:hover {
+  background: rgba(230, 126, 34, 0.8);
+}
+
 /* 按下的縮放感 */
 .btn:active {
   transform: translateY(0);
 }
 
-.bgm-ctrl {
-  margin-top: 10px;
-}
-
-/* .bgm-ctrl {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
-} */
-
-/* 播放狀態下的特殊邊框與發光 */
-.bgm-ctrl.playing {
-  border-color: #ff4500;
-  color: #ff4500;
-  box-shadow: 0 4px 15px rgba(255, 69, 0, 0.2);
-}
-
-.bgm-ctrl:hover.playing {
-  box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
-}
-
-.bgm-ctrl .icon {
-  font-size: 1.2em;
-}
-
-.panel {
-  background: rgba(30, 30, 30, 0.9);
-  backdrop-filter: blur(12px);
-  border: 2px solid #444;
-  border-radius: 12px;
-  z-index: 9999;
-  color: white;
-  font-family: 'Courier New', monospace;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-}
+/* #endregion */
+/* #region panel setting */
 
 #playerPanel {
   position: fixed;
@@ -228,7 +193,24 @@ canvas {
   line-height: 1.8;
 }
 
-#leaderboard-side {
+/* 播放狀態下的特殊邊框與發光 */
+.bgm-ctrl.playing {
+  border-color: #ff4500;
+  color: #ff4500;
+  box-shadow: 0 4px 15px rgba(255, 69, 0, 0.2);
+}
+
+.bgm-ctrl:hover.playing {
+  box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
+}
+
+.bgm-ctrl .icon {
+  font-size: 1.2em;
+}
+
+
+
+#leaderboardPanel {
   position: fixed;
   top: 20px;
   right: 20px;
@@ -266,13 +248,33 @@ canvas {
   transition: background 0.2s;
 }
 
-.lb-row:hover { background: rgba(255, 255, 255, 0.05); }
+.lb-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
 
 /* 欄位寬度控制 */
-.col-rank { width: 30px; font-weight: bold; }
-.col-player { flex: 1; display: flex; align-items: center; gap: 8px; }
-.col-time { width: 50px; color: #ffeb3b; }
-.col-stats { width: 100px; font-size: 10px; text-align: right; }
+.col-rank {
+  width: 30px;
+  font-weight: bold;
+}
+
+.col-player {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.col-time {
+  width: 50px;
+  color: #ffeb3b;
+}
+
+.col-stats {
+  width: 100px;
+  font-size: 10px;
+  text-align: right;
+}
 
 .avatar-mini {
   width: 24px;
@@ -286,4 +288,126 @@ canvas {
   display: block;
   font-size: 9px;
   color: #666;
+}
+
+/* #endregion */
+
+/* #region authScreen */
+
+/* 讓全螢幕遮罩居中 */
+.screen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  /* background: rgba(0, 0, 0, 0.5); */
+  /* 背景稍微暗化，凸顯 Canvas 動畫 */
+}
+
+/* 磨砂玻璃主面板 */
+.glass-panel {
+  padding: 40px;
+  background: rgba(30, 30, 30);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  width: 50vw;
+
+}
+
+.pixel-title {
+  color: #fff;
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 4px;
+  margin-bottom: 10px;
+  margin-top: 0px;
+  text-shadow: 2px 2px 0px #e67e22;
+  /* 像素風常用的硬陰影 */
+}
+
+/* 進度條外框 */
+.progress-bar {
+  /* width: 100%; */
+  height: 12px;
+  background-color: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+/* 進度條填充部分 */
+.progress-fill {
+  height: 100%;
+  background-color: #4caf50;
+  /* 綠色 */
+  transition: width 0.3s ease;
+}
+
+#creatorCanvas {
+  /* background-color: #fff; */
+  width: 15vw;
+  height: 30vh;
+}
+
+/* 輸入框樣式優化 */
+.pixel-input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-family: 'Courier New', Courier, monospace;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.pixel-input:focus {
+  border-color: #e67e22;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+
+/* #endregion */
+/* gameScreen */
+
+#gameScreen {
+  box-shadow: 0 0 50px rgba(255, 69, 0, 0.2);
+  border: 4px solid #8b0000;
+  line-height: 0;
+  position: relative;
+  width: 50vw;
+  height: 65vh;
+}
+
+#gameCanvas {
+  width: 50vw;
+  height: 65vh;
+}
+
+/* .bgm-ctrl {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+} */
+
+.panel {
+  background: rgba(30, 30, 30, 0.9);
+  backdrop-filter: blur(12px);
+  border: 2px solid #444;
+  border-radius: 12px;
+  z-index: 9999;
+  color: white;
+  font-family: 'Courier New', monospace;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }

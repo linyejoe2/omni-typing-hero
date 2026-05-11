@@ -1,12 +1,20 @@
 import { CONFIG } from "../../CONST.js";
 
 const rateMultiplier = {
+  VIT: 20,
   STR: 3,
   CRI: 0.01,
-  VIT: 20,
-  DEF: 2,
-  RES: 2,
+  DEF: 0.002,
   AGI: 0.015
+}
+
+export const baseAttribute = {
+  hp: 60,
+  atk: 10,
+  critRate: 0,
+  def: 0,
+  mRes: 0,
+  evaRate: 0
 }
 
 export class BaseHero {
@@ -37,16 +45,15 @@ export class BaseHero {
     };
 
     // 基礎等級資訊
-    this.level = data.level - 1 || 0;
+    this.level = data.level || 0;
     this.points = data.points || 0; // 剩餘可分配點數
 
     // 基礎屬性 (按照劍客設計 最平衡)
-    this.maxAtk = 20;
-    this.maxHp = 100;
-    this.critRate = 0.05;
-    this.pDef = 10;
-    this.mRes = 10;
-    this.evaRate = 0.05;
+    this.baseHpLevel = 3;
+    this.baseAtkLevel = 3;
+    this.baseCritRateLevel = 3;
+    this.baseDefLevel = 3;
+    this.baseEvaRateLevel = 3;
 
     /**
      * 職業成長率 (Growth Rates)
@@ -54,11 +61,10 @@ export class BaseHero {
      * 例如法師的 ATK 成長率高，而戰士的 HP 成長率高。
      */
     this.growthRates = {
+      hp: 10,      // 每級固定增加的血量
       atk: 2,      // 每級固定增加的攻擊力
       crit: 0.01,  // 每級固定增加的爆擊率 (0.5%)
-      hp: 10,      // 每級固定增加的血量
-      def: 2,    // 每級固定增加的物防
-      res: 2,    // 每級固定增加的魔防
+      def: 0.005,    // 每級固定增加的物防
       eva: 0.006    // 每級固定增加的閃避率 (0.5%)
     };
 
@@ -68,7 +74,6 @@ export class BaseHero {
       CRI: 0, // 會心
       VIT: 0, // 體質
       DEF: 0, // 防禦
-      RES: 0, // 魔防
       AGI: 0  // 敏捷
     };
 
@@ -81,29 +86,14 @@ export class BaseHero {
   }
 
   /**
-   * 核心公式：最終數值 = (基礎 + 等級成長) + (玩家配點加成)
+   * 核心公式：最終數值 = 基礎 + (基礎加點 * 加點成長) + (等級 * 職業成長) + (分配點數 * 加點成長)
    */
   updateFinalStats() {
-    // --- 攻擊力計算 (STR 影響) ---
-    // 公式：基礎 10 + (等級 * 成長) + (力量點數 * 3)
-    this.maxAtk += (this.level * this.growthRates.atk) + (this.assignedPoints.STR * rateMultiplier.STR);
-
-    // --- 爆擊率計算 (CRI 影響) ---
-    // 公式：基礎 5% + (等級 * 成長) + (會心點數 * 1%)
-    this.critRate += (this.level * this.growthRates.crit) + (this.assignedPoints.CRI * rateMultiplier.CRI);
-
-    // --- 最大生命值計算 (VIT 影響) ---
-    // 公式：基礎 100 + (等級 * 成長) + (體質點數 * 20)
-    this.maxHp += (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * rateMultiplier.VIT);
-
-    // --- 物理/魔法防禦計算 (DEF/RES 影響) ---
-    this.pDef += (this.level * this.growthRates.def) + (this.assignedPoints.DEF * rateMultiplier.DEF);
-    this.mRes += (this.level * this.growthRates.res) + (this.assignedPoints.RES * rateMultiplier.RES);
-
-    // --- 閃避率計算 (AGI 影響) ---
-    // 公式：基礎 3% + (等級 * 成長) + (敏捷點數 * 1.5%)
-    // 設定上限 (Cap) 為 50% 避免無敵
-    const rawEva = (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * rateMultiplier.AGI);
+    this.hp += baseAttribute.hp + (this.baseHpLevel * rateMultiplier.VIT) (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * rateMultiplier.VIT);
+    this.atk += baseAttribute.atk + (this.baseAtkLevel * rateMultiplier.STR) + (this.level * this.growthRates.atk) + (this.assignedPoints.STR * rateMultiplier.STR);
+    this.critRate += baseAttribute.critRate + (this.baseCritRateLevel * rateMultiplier.CRI) +  (this.level * this.growthRates.crit) + (this.assignedPoints.CRI * rateMultiplier.CRI);
+    this.def += baseAttribute.def + (this.baseDefLevel * rateMultiplier.DEF) + (this.level * this.growthRates.def) + (this.assignedPoints.DEF * rateMultiplier.DEF);
+    const rawEva = baseAttribute.evaRate + (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * rateMultiplier.AGI);
     this.evaRate += Math.min(0.8, rawEva);
   }
 
@@ -114,8 +104,8 @@ export class BaseHero {
       return "MISS";
     }
 
-    // 2. 減傷判定 (簡單公式：傷害 = 敵攻 * (1 - (我防 / 1000))
-    let finalDamage = Math.round(monsterAtk * (1 - (this.pDef / 1000)));
+    // 2. 減傷判定 (簡單公式：傷害 = 敵攻 * (1 - (我防))
+    let finalDamage = Math.round(monsterAtk * (1 - (this.def)));
     if (finalDamage < 1) finalDamage = 1; // 保底傷害
 
     this.hp -= finalDamage;
@@ -136,7 +126,7 @@ export class BaseHero {
     if (!this.weapon || !this.weapon.canAttack()) return null;
 
     // 2. 計算基礎傷害與爆擊
-    let finalDamage = (this.maxAtk * this.weapon.damageMultiplier) + this.weapon.addDamage;
+    let finalDamage = (this.baseAtkLevel * this.weapon.damageMultiplier) + this.weapon.addDamage;
     let isCrit = Math.random() < this.critRate;
     if (FullCrit) isCrit = true;
 

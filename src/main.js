@@ -1,4 +1,3 @@
-import { UI } from './ui/index.js';
 import { BattleScene } from './scenes/BattleScene.js';
 import { sceneManager } from './scenes/SceneManager.js';
 import { FirebaseService } from './services/firebase.js';
@@ -7,11 +6,8 @@ import { audioManager } from './services/AudioManager.js';
 import { generateFavicon } from './ui/favicon.js';
 import { AuthScene } from './scenes/AuthScene.js';
 import { CreatorScene } from './scenes/CreatorScene.js';
+import { canvasManager } from './ui/CanvasManager.js';
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-canvas.width = CONFIG.width;
-canvas.height = CONFIG.height;
 
 class GameLoop {
   constructor() {
@@ -45,8 +41,7 @@ class GameLoop {
     sceneManager.update();
 
     // 2. 渲染畫面
-    ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-    sceneManager.draw(ctx);
+    sceneManager.draw(canvasManager.get("gameCanvas"));
   }
 }
 
@@ -55,6 +50,7 @@ class App {
     this.game = new GameLoop();
 
     sceneManager.switchTo(new AuthScene());
+    canvasManager.init(["gameCanvas", "avatarCanvas", "creatorCanvas"])
 
     audioManager.init();
     this.game.start();

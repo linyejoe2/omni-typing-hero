@@ -1,3 +1,5 @@
+import { CONFIG } from "../CONST";
+
 export class SceneManager {
 
   constructor() {
@@ -22,6 +24,7 @@ export class SceneManager {
   }
 
   draw(ctx) {
+    ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
     if (this.currentScene) this.currentScene.draw(ctx);
   }
 }

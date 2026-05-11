@@ -4,10 +4,11 @@ import { BattleScene } from './BattleScene.js';
 import { CreatorScene } from './CreatorScene.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { sceneManager } from './SceneManager.js';
+import { canvasManager } from '../ui/CanvasManager.js';
 
 export class AuthScene {
   constructor() {
-    this.canvas = document.getElementById('gameCanvas');
+    this.canvas = canvasManager.get("gameCanvas");
     this.authScreen = document.getElementById('authScreen');
     this.loginBtn = document.getElementById('btn-login');
     this.signupBtn = document.getElementById('btn-signup');
@@ -33,13 +34,13 @@ export class AuthScene {
     onAuthStateChanged(FirebaseService.auth, async (user) => {
       if (user) {
         console.log("用戶已登入:", user.email);
+        FirebaseService.currentUser = user;
         await this.handlePostLogin(user.uid);
       }
     });
   }
 
   startActualGame(charData) {
-    UI.showScreen('game');
     sceneManager.switchTo(new BattleScene(this.canvas, charData));
     UI.playerPanel.update(charData);
     console.log("遊戲開始！角色：", charData.nickname);
@@ -52,8 +53,6 @@ export class AuthScene {
       if (charData) {
         startActualGame(charData)
       } else {
-        // 無角色資訊，切換到 CreatorScene
-        UI.showScreen('creator');
         sceneManager.switchTo(new CreatorScene());
       }
     } catch (error) {
@@ -74,6 +73,9 @@ export class AuthScene {
         sceneManager.switchTo(new CreatorScene(this.canvas));
       }
     } catch (err) {
+      if (err.message.indexOf("invalid-credential") !== -1) {
+        return alert("錯誤的帳號/密碼！")
+      }
       alert("登入失敗: " + err.message);
     }
   }
@@ -84,6 +86,10 @@ export class AuthScene {
       await FirebaseService.signUp(email, pass);
       alert("註冊成功，請登入！");
     } catch (e) {
+      if (e.message.indexOf("email-already-in-use") !== -1) {
+        alert("此信箱已被使用！")
+        return
+      }
       alert("註冊失敗: " + e.message);
     }
   }

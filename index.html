@@ -24,7 +24,9 @@
     </div>
 
     <div class="stats-grid">
-      <div class="stat-item"><span>Avg WPM</span><strong id="stat-avg-wpm">0</strong></div>
+      <div class="stat-item"><span>Avg WPM</span>
+        <stronfg id="stat-avg-wpm">0</strong>
+      </div>
       <div class="stat-item"><span>Max WPM</span><strong id="stat-max-wpm">0</strong></div>
       <div class="stat-item"><span>Accuracy</span><strong id="stat-accuracy">0</strong></div>
     </div>
@@ -61,7 +63,7 @@
     </div>
   </div>
   <!-- right panle -->
-  <div id="leaderboard-side" class="panel">
+  <div id="leaderboardPanel" class="panel">
     <h3 class="lb-title">TOP RANKING</h3>
     <div class="lb-header">
       <span class="col-rank">#</span>
@@ -75,30 +77,54 @@
   </div>
 
 
-  <div id="authScreen">
-    <div class="auth-box">
-      <h1>像素冒險</h1>
-      <input type="email" id="email" placeholder="信箱">
-      <input type="password" id="password" placeholder="密碼">
-      <button id="btn-login">進入世界</button>
-      <button id="btn-signup">註冊帳號</button>
+  <!-- 登入/註冊畫面 -->
+  <div id="authScreen" class="screen-overlay">
+    <div class="glass-panel">
+      <h1 class="pixel-title">Omni Typing HERO</h1>
+      <div class="input-group">
+        <input type="email" id="email" class="pixel-input" placeholder="冒險者信箱">
+        <input type="password" id="password" class="pixel-input" placeholder="密碼">
+      </div>
+      <div class="button-group">
+        <button id="btn-login" class="btn btn-primary">進入世界</button>
+        <button id="btn-signup" class="btn">註冊帳號</button>
+      </div>
     </div>
   </div>
 
-  <div id="charCreatorScreen" class="hidden">
-    <h2>創建角色</h2>
-    <input type="text" id="nickname" placeholder="冒險者名稱">
-    <select id="job-select">
-      <option value="SWORDSMAN" disabled>劍客 (雙手大劍)</option>
-      <option value="MAGE">魔法師 (法杖)</option>
-      <option value="ARCHER" disabled>弓箭手 (長弓)</option>
-      <option value="TANKER" disabled>肉盾 (雙手大盾 + 手斧)</option>
-    </select>
-    <select id="gender-select">
-      <option value="MALE">男</option>
-      <option value="FEMALE">女</option>
-    </select>
-    <button id="btn-start">啟動</button>
+  <!-- 角色創建畫面 -->
+  <div id="creatorScreen" class="screen-overlay" style="display: none;">
+    <div class="glass-panel">
+      <h1 class="pixel-title">創建角色</h1>
+      <div style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      ">
+        <div id="jobDefaultAttributeList" style="flex: 1;">
+        </div>
+        <div style="flex: 1;">
+          <canvas id="creatorCanvas" width="120px" height="90px"></canvas>
+        </div>
+        <div style="flex: 1;"></div>
+      </div>
+      <div class="input-group">
+        <input type="text" id="nickname" class="pixel-input" placeholder="角色名稱">
+        <select id="jobSelect" class="pixel-input">
+          <option value="mage">法師 (Mage)</option>
+          <option value="warrior">戰士 (Warrior)</option>
+          <option value="archer">弓手 (Archer)</option>
+        </select>
+        <select id="genderSelect" class="pixel-input">
+          <option value="male">男性</option>
+          <option value="female">女性</option>
+        </select>
+      </div>
+      <button id="btn-start" class="btn btn-primary">開啟征途</button>
+    </div>
   </div>
 
   <div id="gameScreen" class="hidden">

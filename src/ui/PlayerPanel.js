@@ -1,10 +1,11 @@
 import { Mage } from "../models/Hero/Mage.js";
 import { FirebaseService } from "../services/firebase.js";
+import { canvasManager } from "./CanvasManager.js";
 
 export class PlayerPanel {
   constructor() {
     this.container = document.getElementById('playerPanel');
-    this.avatarCtx = document.getElementById('avatarCanvas').getContext('2d');
+    this.avatarCtx = canvasManager.get("avatarCanvas");
     this.initSettingsTab();
     this.setupTabs();
   }
