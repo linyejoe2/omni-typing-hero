@@ -1,7 +1,7 @@
 import { CONFIG } from "../../CONST.js";
 
 const rateMultiplier = {
-  VIT: 20,
+  VIT: 10,
   STR: 3,
   CRI: 0.01,
   DEF: 0.002,
@@ -11,7 +11,7 @@ const rateMultiplier = {
 export const baseAttribute = {
   hp: 60,
   atk: 10,
-  critRate: 0,
+  critRate: 0.02,
   def: 0,
   mRes: 0,
   evaRate: 0
@@ -24,6 +24,14 @@ export class BaseHero {
     // this.gender = 'MALE'; // 'MALE' 或 'FEMALE'
     this.gender = data.gender; // 'MALE' 或 'FEMALE'
     this.isFemale = this.gender === 'FEMALE';
+
+    this.heroInfo = [
+      "「攻守兼備的開拓者，戰場上的穩定核心。」",
+      "職業介紹： 擁有最均衡的體質，適應各種戰鬥環境。無論是新手還是資深冒險者，都能在劍士身上找到完美的節奏感。",
+      "戰鬥風格： 均衡型。擁有穩定的生存能力與不俗的輸出，是容錯率最高的職業。",
+      "初始數值： 體質與防禦適中，攻擊表現穩定。",
+      "推薦人群： 喜歡紮實手感、追求穩定的玩家。",
+    ]
 
     // 座標與狀態
     this.x = 150;
@@ -89,12 +97,14 @@ export class BaseHero {
    * 核心公式：最終數值 = 基礎 + (基礎加點 * 加點成長) + (等級 * 職業成長) + (分配點數 * 加點成長)
    */
   updateFinalStats() {
-    this.hp += baseAttribute.hp + (this.baseHpLevel * rateMultiplier.VIT) (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * rateMultiplier.VIT);
-    this.atk += baseAttribute.atk + (this.baseAtkLevel * rateMultiplier.STR) + (this.level * this.growthRates.atk) + (this.assignedPoints.STR * rateMultiplier.STR);
-    this.critRate += baseAttribute.critRate + (this.baseCritRateLevel * rateMultiplier.CRI) +  (this.level * this.growthRates.crit) + (this.assignedPoints.CRI * rateMultiplier.CRI);
-    this.def += baseAttribute.def + (this.baseDefLevel * rateMultiplier.DEF) + (this.level * this.growthRates.def) + (this.assignedPoints.DEF * rateMultiplier.DEF);
+    this.hp = baseAttribute.hp + (this.baseHpLevel * rateMultiplier.VIT) + (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * rateMultiplier.VIT);
+    this.atk = baseAttribute.atk + (this.baseAtkLevel * rateMultiplier.STR) + (this.level * this.growthRates.atk) + (this.assignedPoints.STR * rateMultiplier.STR);
+    this.critRate = baseAttribute.critRate + (this.baseCritRateLevel * rateMultiplier.CRI) + (this.level * this.growthRates.crit) + (this.assignedPoints.CRI * rateMultiplier.CRI);
+    this.def = baseAttribute.def + (this.baseDefLevel * rateMultiplier.DEF) + (this.level * this.growthRates.def) + (this.assignedPoints.DEF * rateMultiplier.DEF);
     const rawEva = baseAttribute.evaRate + (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * rateMultiplier.AGI);
-    this.evaRate += Math.min(0.8, rawEva);
+    this.evaRate = Math.min(0.8, rawEva);
+
+    this.currentHp = this.hp;
   }
 
   takeDamage(monsterAtk) {
@@ -108,10 +118,10 @@ export class BaseHero {
     let finalDamage = Math.round(monsterAtk * (1 - (this.def)));
     if (finalDamage < 1) finalDamage = 1; // 保底傷害
 
-    this.hp -= finalDamage;
+    this.currentHp -= finalDamage;
     this.shakeTime = 15;
 
-    if (this.hp <= 0) this.onDeath();
+    if (this.currentHp <= 0) this.onDeath();
     return finalDamage;
   }
 
@@ -126,7 +136,7 @@ export class BaseHero {
     if (!this.weapon || !this.weapon.canAttack()) return null;
 
     // 2. 計算基礎傷害與爆擊
-    let finalDamage = (this.baseAtkLevel * this.weapon.damageMultiplier) + this.weapon.addDamage;
+    let finalDamage = (this.atk * this.weapon.damageMultiplier) + this.weapon.addDamage;
     let isCrit = Math.random() < this.critRate;
     if (FullCrit) isCrit = true;
 
@@ -159,7 +169,7 @@ export class BaseHero {
 
   // 提供給子類別覆寫的繪製基礎
   draw(ctx) {
-    if (this.hp <= 0 && this.opacity > 0) this.opacity -= 0.05;
+    if (this.currentHp <= 0 && this.opacity > 0) this.opacity -= 0.05;
 
     ctx.save();
     let drawX = this.x;

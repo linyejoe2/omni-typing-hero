@@ -4,7 +4,7 @@ import {
   getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, query, getDocs, where, orderBy, limit
 } from "firebase/firestore";
 import { refreshLeaderboard } from "../ui/LeaderBoard";
-import { UI } from "../ui";
+import { playerPanel } from "../ui/PlayerPanel";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -111,7 +111,7 @@ export const FirebaseService = {
         await updateDoc(charRef, updateData);
         console.log("🏆 個人成就已刷新！");
       }
-      UI.playerPanel.update((await getDoc(charRef)).data()) 
+      playerPanel.update((await getDoc(charRef)).data()) 
     } catch (e) {
       console.error("個人資料更新失敗:", e);
     }

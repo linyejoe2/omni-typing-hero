@@ -7,6 +7,8 @@ import { generateFavicon } from './ui/favicon.js';
 import { AuthScene } from './scenes/AuthScene.js';
 import { CreatorScene } from './scenes/CreatorScene.js';
 import { canvasManager } from './ui/CanvasManager.js';
+import { playerPanel } from './ui/PlayerPanel.js';
+import { elementManager } from './ui/ElementManager.js';
 
 
 class GameLoop {
@@ -47,10 +49,12 @@ class GameLoop {
 
 class App {
   constructor() {
+    canvasManager.init(["gameCanvas", "avatarCanvas", "creatorCanvas"])
+    elementManager.init()
+    playerPanel.init()
     this.game = new GameLoop();
 
     sceneManager.switchTo(new AuthScene());
-    canvasManager.init(["gameCanvas", "avatarCanvas", "creatorCanvas"])
 
     audioManager.init();
     this.game.start();

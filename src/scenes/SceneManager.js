@@ -16,6 +16,7 @@ export class SceneManager {
     if (this.currentScene.init) {
       this.currentScene.init();
     }
+    this.currentScene.in()
   }
 
   // 這是由 Game Loop 持續呼叫的入口

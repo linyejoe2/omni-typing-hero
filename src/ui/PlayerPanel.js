@@ -1,13 +1,20 @@
+import { Defender } from "../models/Hero/Defender.js";
+import { heroGenerator } from "../models/Hero/heroGenerater.js";
 import { Mage } from "../models/Hero/Mage.js";
 import { FirebaseService } from "../services/firebase.js";
 import { canvasManager } from "./CanvasManager.js";
 
 export class PlayerPanel {
   constructor() {
-    this.container = document.getElementById('playerPanel');
-    this.avatarCtx = canvasManager.get("avatarCanvas");
+    this.container;
+    this.avatarCtx;
     this.initSettingsTab();
     this.setupTabs();
+  }
+
+  init() {
+    this.container = document.getElementById('playerPanel');
+    this.avatarCtx = canvasManager.get("avatarCanvas");
   }
 
   initSettingsTab() {
@@ -70,11 +77,11 @@ export class PlayerPanel {
   }
 
   _drawHeroAvatar(data) {
-    switch (data.job) {
-      case 'MAGE':
-        return (new Mage(data)).renderAvatar(this.avatarCtx);
-      default:
-        return (new Mage(data)).renderAvatar(this.avatarCtx);
-    }
+    const hero = heroGenerator(data)
+    hero.renderAvatar(this.avatarCtx)
+
+    // return (new Mage(data)).renderAvatar(this.avatarCtx)
   }
 }
+
+export const playerPanel = new PlayerPanel();

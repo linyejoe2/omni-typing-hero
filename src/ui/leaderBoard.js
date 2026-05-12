@@ -1,5 +1,5 @@
 import { FirebaseService } from "../services/firebase.js";
-import { Mage } from "../models/Hero/Mage.js";
+import { heroGenerator } from "../models/Hero/heroGenerater.js";
 
 export async function refreshLeaderboard(monsterId) {
   const listEl = document.getElementById('lb-list');
@@ -23,11 +23,8 @@ export async function refreshLeaderboard(monsterId) {
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
 
-    // 渲染職業頭像 (這會用到你之前寫的精緻渲染邏輯)
-    if (data.job === 'MAGE') {
-      const tempMage = new Mage({ gender: data.gender || 'MALE' });
-      tempMage.renderAvatar(ctx);
-    }
+    const hero = heroGenerator(data)
+    hero.renderAvatar(ctx);
 
     row.innerHTML = `
 <div class="col-rank">${index + 1}</div>

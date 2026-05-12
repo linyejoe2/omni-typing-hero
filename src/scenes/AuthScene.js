@@ -1,15 +1,22 @@
 import { FirebaseService } from '../services/firebase.js';
-import { UI } from '../ui/index.js';
 import { BattleScene } from './BattleScene.js';
 import { CreatorScene } from './CreatorScene.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { sceneManager } from './SceneManager.js';
 import { canvasManager } from '../ui/CanvasManager.js';
+import { playerPanel } from '../ui/PlayerPanel.js';
+import { BaseScene } from './BaseScene.js';
+import { elementManager } from '../ui/ElementManager.js';
 
-export class AuthScene {
+export class AuthScene extends BaseScene {
   constructor() {
+    super();
     this.canvas = canvasManager.get("gameCanvas");
     this.authScreen = document.getElementById('authScreen');
+
+    this.emailInput = document.getElementById("email");
+    this.passInput = document.getElementById("password");
+
     this.loginBtn = document.getElementById('btn-login');
     this.signupBtn = document.getElementById('btn-signup');
     this.createCharacterBtn = document.getElementById('btn-start');
@@ -21,12 +28,14 @@ export class AuthScene {
 
   // 當 SceneManager 切換到此場景時觸發
   init() {
-    this.authScreen.style.display = 'flex'; // 顯示登入畫面
     this.loginBtn.addEventListener('click', this.handleLogin);
     this.signupBtn.addEventListener('click', this.handleSignUp);
-    this.createCharacterBtn.addEventListener('click', this.handleCreate);
 
     this.checkAuthState()
+  }
+
+  in() {
+    elementManager.showScreen('authScreen')
   }
 
   // 監聽 Firebase 登入狀態
@@ -40,18 +49,14 @@ export class AuthScene {
     });
   }
 
-  startActualGame(charData) {
-    sceneManager.switchTo(new BattleScene(this.canvas, charData));
-    UI.playerPanel.update(charData);
-    console.log("遊戲開始！角色：", charData.nickname);
-  }
-
   // 登入後的處理邏輯
   async handlePostLogin(uid) {
     try {
       const charData = await FirebaseService.getCharacter(uid);
       if (charData) {
-        startActualGame(charData)
+        sceneManager.switchTo(new BattleScene(this.canvas, charData));
+        playerPanel.update(charData);
+        console.log("遊戲開始！角色：", charData.nickname);
       } else {
         sceneManager.switchTo(new CreatorScene());
       }
@@ -61,9 +66,8 @@ export class AuthScene {
   }
 
   async handleLogin() {
-    const { email, pass } = UI.getInputs();
     try {
-      const user = await FirebaseService.login(email, pass);
+      const user = await FirebaseService.login(this.emailInput.value, this.passInput.value);
       const charData = await FirebaseService.getCharacter(user.uid);
 
       if (charData) {
@@ -81,9 +85,8 @@ export class AuthScene {
   }
 
   async handleSignUp() {
-    const { email, pass } = UI.getInputs();
     try {
-      await FirebaseService.signUp(email, pass);
+      await FirebaseService.signUp(this.emailInput.value, this.passInput.value);
       alert("註冊成功，請登入！");
     } catch (e) {
       if (e.message.indexOf("email-already-in-use") !== -1) {
@@ -91,26 +94,6 @@ export class AuthScene {
         return
       }
       alert("註冊失敗: " + e.message);
-    }
-  }
-
-  async handleCreate() {
-    const { nickname, job, gender } = UI.getInputs();
-    if (!nickname) return alert("請輸入名稱");
-
-    const charData = {
-      nickname,
-      job,
-      gender,
-      level: 1,
-      gold: 0,
-      createdAt: new Date()
-    };
-
-    const user = FirebaseService.auth.currentUser;
-    if (user) {
-      await FirebaseService.saveCharacter(user.uid, charData);
-      this.startActualGame(charData);
     }
   }
 

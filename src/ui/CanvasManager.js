@@ -1,3 +1,5 @@
+import { CONFIG } from "../CONST";
+
 class CanvasManager {
   constructor() {
     this.canvases = {};
@@ -13,6 +15,9 @@ class CanvasManager {
       this.canvases[id] = el;
       this.contexts[id] = el.getContext('2d');
     }
+
+    this.canvases["gameCanvas"].width = CONFIG.width;
+    this.canvases["gameCanvas"].height = CONFIG.height;
   }
 
   // 獲取 Context

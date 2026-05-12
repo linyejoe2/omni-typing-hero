@@ -15,7 +15,7 @@ export class Hero {
     }
 
     getJobColor() {
-        const colors = { SWORDSMAN: '#e74c3c', MAGE: '#3498db', ARCHER: '#2ecc71', TANKER: '#95a5a6' };
+        const colors = { SWORDSMAN: '#e74c3c', mage: '#3498db', ARCHER: '#2ecc71', TANKER: '#95a5a6' };
         return colors[this.job] || '#fff';
     }
 

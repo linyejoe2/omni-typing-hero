@@ -7,25 +7,20 @@ export class Mage extends BaseHero {
     this.weapon = new MagicStaff();
     this.floatOffset = 0;
 
+    this.heroInfo = [
+      "「掌控混亂的玻璃大砲，毀滅只在彈指之間。」",
+      "職業介紹： 精通奧術力量的賢者。雖然身質纖弱，但其釋放的破壞力足以瞬間扭轉戰局。",
+      "戰鬥風格： 極致輸出。追求高爆擊與高攻擊，但在戰場上必須極力避免受傷。",
+      "初始數值： 極高的 STR 與 CRI，但 HP 與 DEF 幾乎為零。",
+      "推薦人群： 追求暴力美學、享受瞬間清場快感的「大數字」愛好者。"
+    ];
+
     // 基礎屬性
     this.baseHpLevel = 0;
     this.baseAtkLevel = 6;
     this.baseCritRateLevel = 6;
     this.baseDefLevel = 0;
     this.baseEvaRateLevel = 3;
-
-    // 根據性別設定像素裝飾色
-    this.palette = {
-      primary: "#6c5ce7",      // 深紫 (主色)
-      light: "#a29bfe",        // 淺紫 (高光)
-      dark: "#4834d4",         // 暗紫 (陰影)
-      skin: this.isFemale ? "#ffe0bd" : "#ffcc91",         // 膚色
-      skinShadow: "#ffcd94",   // 膚色陰影
-      eye: "#2d3436",          // 眼睛
-      deco: this.isFemale ? "#ff99cc" : "#99ccff",        // 裝飾紅/寶石
-      hair: this.isFemale ? "#ff99cc" : "#788694",
-      hairLight: this.isFemale ? "#ffb7db" : "#969696",
-    };
 
     /**
     * 職業成長率 (Growth Rates)
@@ -40,19 +35,31 @@ export class Mage extends BaseHero {
       eva: 0.006    // 每級固定增加的閃避率 (0.5%)
     };
 
+    // 根據性別設定像素裝飾色
+    this.palette = {
+      primary: "#6c5ce7",      // 深紫 (主色)
+      light: "#a29bfe",        // 淺紫 (高光)
+      dark: "#4834d4",         // 暗紫 (陰影)
+      skin: this.isFemale ? "#ffe0bd" : "#ffcc91",         // 膚色
+      skinShadow: "#ffcd94",   // 膚色陰影
+      eye: "#2d3436",          // 眼睛
+      deco: this.isFemale ? "#ff99cc" : "#99ccff",        // 裝飾紅/寶石
+      hair: this.isFemale ? "#ff99cc" : "#788694",
+      hairLight: this.isFemale ? "#ffb7db" : "#969696",
+    };
+
     this.updateFinalStats();
 
-    // 重新計算後，確保當前血量補滿
-    this.hp = this.baseHpLevel;
-
-    console.log(`
-      目前屬性
+    if (import.meta.env.DEV) {
+      console.log(`
+      Debug: 目前屬性
       HP: ${this.hp}
       ATK: ${this.atk}
       CRI: ${this.critRate}
       DEF: ${this.def}
       EVA: ${this.evaRate}
       `)
+    }
   }
 
   update() {

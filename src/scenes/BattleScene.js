@@ -1,4 +1,4 @@
-import { Scene } from './BaseScene.js';
+import { BaseScene } from './BaseScene.js';
 import { CONFIG } from '../CONST.js';
 import { Kooni } from '../models/Monster/Kooni.js';
 import { Mage } from '../models/Hero/Mage.js';
@@ -9,17 +9,17 @@ import { drawSword } from '../models/Icon/Sword.js';
 import { drawCoin } from '../models/Icon/Coin.js';
 import { EnemyFireball } from "../models/Projectile/EnemyFireball.js"
 import { FirebaseService } from '../services/firebase.js';
-import { UI } from '../ui/index.js';
 import { refreshLeaderboard } from '../ui/LeaderBoard.js';
 import { roundRect } from '../util.js';
+import { elementManager } from '../ui/ElementManager.js';
+import { heroGenerator } from '../models/Hero/heroGenerater.js';
 
-export class BattleScene extends Scene {
+export class BattleScene extends BaseScene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
     super();
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.width = canvas.width;
-    this.height = canvas.height;
+    this.ctx = canvas;
+    this.width = canvas.canvas.width;
+    this.height = canvas.canvas.height;
 
     // 初始化該場景需要的資料
     this.charData = charData;
@@ -73,8 +73,6 @@ export class BattleScene extends Scene {
       }
 
       if (this.isGameOver) {
-        // const charData = await FirebaseService.getCharacter(FirebaseService.auth.currentUser.uid);
-        // UI.playerPanel.update(charData)
         this.resetGame()
         return
       };
@@ -88,6 +86,10 @@ export class BattleScene extends Scene {
         this.monster.penalizeMiss();
       }
     };
+  }
+
+  in() {
+    elementManager.showScreen('gameScreen')
   }
 
   updateFinalStats() {
@@ -112,16 +114,12 @@ export class BattleScene extends Scene {
 
   createHero() {
     const data = { ...this.charData, onDeath: this.onDeath.bind(this) };
-    switch (data.job) {
-      case 'MAGE': return new Mage(data);
-      // case 'SWORDSMAN': return new Swordsman(data);
-      default: return new Mage(data); // 預設
-    }
+    return heroGenerator(data)
   }
 
   createMonster() {
     return new Kooni({
-      hp: 250,
+      hp: 200,
       x: 650,
       y: CONFIG.groundY - 20,
       rageThreshold: 50
@@ -314,7 +312,7 @@ export class BattleScene extends Scene {
     const infoY = 25;  // Rage Bar 下方的起始高度
 
     ctx.fillStyle = "#333"; ctx.fillRect(infoX, infoY, bw, bh);
-    ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.hp / this.hero.baseHpLevel)) * bw, bh);
+    ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.currentHp / this.hero.hp)) * bw, bh);
     ctx.strokeStyle = "#d4af37"; ctx.strokeRect(infoX, infoY, bw, bh);
     // 繪製血量文字 (置中)
     ctx.save();
@@ -326,7 +324,7 @@ export class BattleScene extends Scene {
     // 設定文字在血條的正中央
     const textX = infoX + bw / 2;
     const textY = infoY + bh / 2 + 1; // +1 是為了視覺上的微調補償
-    const hpText = `${Math.ceil(this.hero.hp)} / ${this.hero.baseHpLevel}`;
+    const hpText = `${Math.ceil(this.hero.currentHp)} / ${this.hero.hp}`;
 
     // 選擇性：加上深色描邊讓數字更清晰 (防止在紅色背景下看不清楚)
     ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
