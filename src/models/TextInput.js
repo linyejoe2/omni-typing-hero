@@ -146,11 +146,11 @@ export class TextInput {
 
     // --- WPM 計算邏輯 ---
     // 如果距離上次輸入在一秒內，代表正在打字，累加有效時間
-    if (now - this.lastInputTime < 1000) {
+    if (now - this.lastInputTime > 1000 && this.typedIndex == 0) {
+      this.isPaused = true; // 超過一秒沒動，進入暫停狀態
+    } else {
       this.totalActiveTime += deltaTime;
       this.isPaused = false;
-    } else {
-      this.isPaused = true; // 超過一秒沒動，進入暫停狀態
     }
 
     if (this.totalActiveTime <= 0) return;
