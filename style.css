@@ -74,6 +74,15 @@ canvas {
   background: rgba(230, 126, 34, 0.8);
 }
 
+.btn-danger {
+  background: rgba(192, 57, 43, 0.6);
+  border-color: rgba(192, 57, 43, 0.8);
+}
+
+.btn-danger:hover {
+  background: rgba(192, 57, 43, 0.85);
+}
+
 /* 按下的縮放感 */
 .btn:active {
   transform: translateY(0);

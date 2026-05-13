@@ -52,7 +52,10 @@ export const FirebaseService = {
     return docSnap.exists() ? docSnap.data() : null;
   },
   async saveCharacter(uid, data) {
-    await setDoc(doc(db, "characters", uid), data);
+    await updateDoc(doc(db, "characters", uid), data);
+  },
+  async resetCharacterJob(uid) {
+    await updateDoc(doc(db, "characters", uid), { job: null, gender: null });
   },
 
   /**

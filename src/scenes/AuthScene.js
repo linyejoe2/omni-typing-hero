@@ -53,7 +53,7 @@ export class AuthScene extends BaseScene {
   async handlePostLogin(uid) {
     try {
       const charData = await FirebaseService.getCharacter(uid);
-      if (charData) {
+      if (charData && charData.job) {
         sceneManager.switchTo(new BattleScene(this.canvas, charData));
         playerPanel.update(charData);
         console.log("遊戲開始！角色：", charData.nickname);

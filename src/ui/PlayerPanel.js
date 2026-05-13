@@ -18,8 +18,22 @@ export class PlayerPanel {
   }
 
   initSettingsTab() {
-    const btnLogout = document.getElementById('btn-logout');
+    const btnReborn = document.getElementById('btn-reborn');
+    if (btnReborn) {
+      btnReborn.addEventListener('click', async () => {
+        if (confirm("確定要轉生嗎？\n職業與性別將會重置，讓你重新選擇。\n統計資訊則會保留。")) {
+          try {
+            const uid = FirebaseService.currentUser?.uid;
+            if (uid) await FirebaseService.resetCharacterJob(uid);
+            window.location.reload();
+          } catch (err) {
+            alert("轉生失敗，請稍後再試");
+          }
+        }
+      });
+    }
 
+    const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
       btnLogout.addEventListener('click', async () => {
         // 彈出確認視窗，增加點代入感
