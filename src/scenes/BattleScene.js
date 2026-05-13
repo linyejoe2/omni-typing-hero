@@ -570,6 +570,7 @@ export class BattleScene extends BaseScene {
 
     const tipses = [
       "打字擊敗怪物",
+      "打錯字會激怒怪物",
       "中間綠色能量條集滿 = 狂暴",
       "按下 ESC 可以暫停"
     ]
