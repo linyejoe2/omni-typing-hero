@@ -558,9 +558,9 @@ export class BattleScene extends BaseScene {
 
     // 3. 繪製 Tips 框
     const tipBoxW = 400;
-    const tipBoxH = 80;
+    const tipBoxH = 110;
     const boxX = width / 2 - tipBoxW / 2;
-    const boxY = height / 2 - 30;
+    const boxY = height / 2 - 40;
 
     ctx.strokeStyle = "#444";
     ctx.lineWidth = 2;
@@ -578,11 +578,19 @@ export class BattleScene extends BaseScene {
     // 4. 顯示隨機 Tip (建議在進入暫停時先選定一個 index，避免 draw loop 每一幀都隨機換)
     ctx.fillStyle = "#d3d3d3";
     ctx.font = "14px 'Courier New'";
-    // 假設你將選好的 tip 存在 this.currentTip
-    // const tipText = "Tip: 保持節奏比單純求快更能提高 DPS。";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle"; // 設定基準線為中間，更方便計算
+
+    const lineHeight = 22; // 設定每一行的高度
+    const totalTextHeight = tipses.length * lineHeight; // 計算文字內容的總高度
+
+    // 起始位置 = 框框頂部 + (框框高度 - 文字總高度) / 2 + 第一行的一半位移
+    // 簡單點說就是從框框中心往上推 (總高度/2)，但要補回第一行的中心偏置
+    const startY = boxY + (tipBoxH - totalTextHeight) / 2 + (lineHeight / 2);
+
     tipses.forEach((tips, i) => {
-      ctx.fillText(tips, width / 2, boxY + (25 + i * 20));
-    })
+      ctx.fillText(tips, width / 2, startY + (i * lineHeight));
+    });
 
     // 5. 繼續提示
     // 這裡做一個簡單的呼吸燈效果
