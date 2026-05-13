@@ -283,8 +283,8 @@ canvas {
 
 .timestamp {
   display: block;
-  font-size: 9px;
-  color: #666;
+  font-size: 12px;
+  color: #aaaaaa;
 }
 
 /* #endregion */
