@@ -225,11 +225,42 @@ canvas {
   overflow: hidden;
 }
 
-.lb-title {
-  text-align: center;
+.lb-title-row {
+  display: flex;
+  align-items: center;
   background: #444;
+  padding: 0 10px;
+}
+
+.lb-title {
+  flex: 1;
+  text-align: center;
   margin: 0;
-  padding: 10px;
+  padding: 10px 0;
+  color: #62fd4e;
+}
+
+.btn-lb-toggle {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  color: #888;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.65em;
+  padding: 3px 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-lb-toggle:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ccc;
+}
+
+.btn-lb-toggle.active {
+  background: rgba(98, 253, 78, 0.15);
+  border-color: #62fd4e;
   color: #62fd4e;
 }
 

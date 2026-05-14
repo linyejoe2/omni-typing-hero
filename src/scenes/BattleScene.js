@@ -50,7 +50,7 @@ export class BattleScene extends BaseScene {
     this.isPaused = true;
     this.newGame = true;
 
-    refreshLeaderboard("Kooni")
+    refreshLeaderboard("Kooni", this.charData.job)
 
     // 重要：連結鍵盤與輸入邏輯
     this.keyboard.onKeyPress = async (key) => {

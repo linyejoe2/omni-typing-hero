@@ -1,30 +1,50 @@
 import { FirebaseService } from "../services/firebase.js";
 import { heroGenerator } from "../models/Hero/heroGenerater.js";
 
-export async function refreshLeaderboard(monsterId) {
+let _allRecords = [];
+let _currentJob = null;
+let _showAllJobs = false;
+
+const toggleBtn = document.getElementById('btn-all-jobs');
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    _showAllJobs = !_showAllJobs;
+    toggleBtn.classList.toggle('active', _showAllJobs);
+    _renderRecords();
+  });
+}
+
+export async function refreshLeaderboard(monsterId, currentJob) {
+  if (currentJob) _currentJob = currentJob;
+
   const listEl = document.getElementById('lb-list');
   listEl.innerHTML = '<div class="loading">Loading...</div>';
 
-  const records = await FirebaseService.getLeaderboard(monsterId);
-  listEl.innerHTML = ''; // 清空讀取中文字
+  _allRecords = await FirebaseService.getLeaderboard(monsterId);
+  _renderRecords();
+}
+
+function _renderRecords() {
+  const listEl = document.getElementById('lb-list');
+  const records = _showAllJobs
+    ? _allRecords
+    : _allRecords.filter(r => r.job === _currentJob);
+
+  listEl.innerHTML = '';
 
   records.forEach((data, index) => {
     const row = document.createElement('div');
     row.className = 'lb-row';
 
-    // 格式化日期：2026/5/6 12:11
     const date = data.updatedAt ? data.updatedAt.toDate() : new Date();
     const dateStr = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
 
-    // 建立頭像 Canvas
     const canvas = document.createElement('canvas');
     canvas.className = 'avatar-mini';
-    canvas.width = 64;  // 內部解析度
+    canvas.width = 64;
     canvas.height = 64;
     const ctx = canvas.getContext('2d');
-
-    const hero = heroGenerator(data)
-    hero.renderAvatar(ctx);
+    heroGenerator(data).renderAvatar(ctx);
 
     row.innerHTML = `
 <div class="col-rank">${index + 1}</div>
@@ -41,9 +61,8 @@ export async function refreshLeaderboard(monsterId) {
     WPM: ${data.wpm}<br>
     ACC: ${data.accuracy}%
 </div>
-        `;
+    `;
 
-    // 將 Canvas 插入對應位置
     row.querySelector('.canvas-container').appendChild(canvas);
     listEl.appendChild(row);
   });

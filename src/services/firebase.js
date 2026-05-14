@@ -3,8 +3,8 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, si
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, query, getDocs, where, orderBy, limit
 } from "firebase/firestore";
-import { refreshLeaderboard } from "../ui/LeaderBoard";
-import { playerPanel } from "../ui/PlayerPanel";
+import { refreshLeaderboard } from "../ui/LeaderBoard.js";
+import { playerPanel } from "../ui/PlayerPanel.js";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -160,7 +160,7 @@ export const FirebaseService = {
         console.log("🏅 已刷新排行榜名次！");
       }
 
-      await refreshLeaderboard(stats.monster);
+      await refreshLeaderboard(stats.monster, stats.job);
     } catch (e) {
       console.error("排行榜更新失敗", e);
     }
