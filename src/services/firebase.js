@@ -47,15 +47,15 @@ export const FirebaseService = {
       uid = this.currentUser.uid;
     }
     if (!uid) return null;
-    const docRef = doc(db, "characters", uid);
+    const docRef = doc(db, "character", uid);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? docSnap.data() : null;
   },
   async saveCharacter(uid, data) {
-    await updateDoc(doc(db, "characters", uid), data);
+    await setDoc(doc(db, "character", uid), data, { merge: true });
   },
   async resetCharacterJob(uid) {
-    await updateDoc(doc(db, "characters", uid), { job: null, gender: null });
+    await updateDoc(doc(db, "character", uid), { job: null, gender: null });
   },
 
   /**
@@ -88,7 +88,7 @@ export const FirebaseService = {
      * 只有當新數據超過舊數據時才更新
      */
   async updatePersonalBest(uid, stats) {
-    const charRef = doc(db, "characters", uid);
+    const charRef = doc(db, "character", uid);
     const charSnap = await getDoc(charRef);
 
     if (!charSnap.exists()) return;
@@ -114,7 +114,7 @@ export const FirebaseService = {
         await updateDoc(charRef, updateData);
         console.log("🏆 個人成就已刷新！");
       }
-      playerPanel.update((await getDoc(charRef)).data()) 
+      playerPanel.update((await getDoc(charRef)).data())
     } catch (e) {
       console.error("個人資料更新失敗:", e);
     }
@@ -136,8 +136,8 @@ export const FirebaseService = {
   async updateLeaderboard(uid, stats) {
     try {
       // 這裡我們用 uid 作為 Document ID，這樣同一個人只會有一筆資料
-      const recordId = `${uid}_${stats.monster}`;
-      const lbRef = doc(db, "leaderboards", recordId);
+      const recordId = `${uid}_${stats.job}_${stats.monster}`;
+      const lbRef = doc(db, "leaderboard", recordId);
       const lbSnap = await getDoc(lbRef);
 
       // 只有當這次的 WPM 超過排行榜上的紀錄時才更新
@@ -171,7 +171,7 @@ export const FirebaseService = {
      */
   async getLeaderboard(monsterId) {
     try {
-      const lbRef = collection(db, "leaderboards");
+      const lbRef = collection(db, "leaderboard");
       // 增加 where 條件：只撈出這隻怪物的紀錄
       const q = query(
         lbRef,

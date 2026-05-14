@@ -13,6 +13,7 @@ import { refreshLeaderboard } from '../ui/LeaderBoard.js';
 import { roundRect } from '../util.js';
 import { elementManager } from '../ui/ElementManager.js';
 import { heroGenerator } from '../models/Hero/heroGenerater.js';
+import { playerPanel } from '../ui/PlayerPanel.js';
 
 export class BattleScene extends BaseScene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
@@ -90,6 +91,8 @@ export class BattleScene extends BaseScene {
 
   in() {
     elementManager.showScreen('gameScreen')
+    elementManager.showPanel()
+    playerPanel.update(this.charData)
   }
 
   updateFinalStats() {

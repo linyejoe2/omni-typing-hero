@@ -6,14 +6,14 @@ import { canvasManager } from "./CanvasManager.js";
 
 export class PlayerPanel {
   constructor() {
-    this.container;
+    this.element;
     this.avatarCtx;
     this.initSettingsTab();
     this.setupTabs();
   }
 
   init() {
-    this.container = document.getElementById('playerPanel');
+    this.element = document.getElementById('playerPanel');
     this.avatarCtx = canvasManager.get("avatarCanvas");
   }
 

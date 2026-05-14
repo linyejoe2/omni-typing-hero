@@ -5,10 +5,10 @@ import { canvasManager } from '../ui/CanvasManager.js';
 import { Mage } from '../models/Hero/Mage.js';
 import { heroGenerator } from '../models/Hero/heroGenerater.js';
 import { playerPanel } from '../ui/PlayerPanel.js';
-import { elementManager } from '../ui/ElementManager.js';
+import { elementManager as EM } from '../ui/ElementManager.js';
 
 export class CreatorScene {
-  constructor() {
+  constructor(charData) {
     this.canvas = canvasManager.get("creatorCanvas");
     this.creatorScreen = document.getElementById('creatorScreen'); // 確保 HTML 有這個 ID
     this.startBtn = document.getElementById('btn-start');
@@ -17,11 +17,12 @@ export class CreatorScene {
     this.genderSelect = document.getElementById("genderSelect");
     this.jobDefaultAttributeList = document.getElementById("jobDefaultAttributeList"); this.heroInfoCard = document.getElementById("heroInfo");
     this.charData = {
-      nickname: "冒險者",
+      ...charData,
+      nickname: charData?.nickname || "",
       job: this.jobSelect.value,
       gender: "MALE",
       level: 1,
-      gold: 0,
+      gold: charData?.gold ||0,
       hp: 100, // 初始血量
       exp: 0,
       createdAt: new Date()
@@ -32,11 +33,18 @@ export class CreatorScene {
   }
 
   in() {
-    elementManager.showScreen('creatorScreen')
+    EM.showScreen('creatorScreen')
+    EM.hidePanel()
   }
 
   init() {
     console.log("進入角色創建場景");
+
+    if (this.charData && this.charData.nickname) {
+      this.nicknameInput.value = this.charData.nickname;
+      this.updatePreviewHero();
+      this.nicknameInput.classList.add('hidden')
+    }
 
     this.startBtn.addEventListener('click', this.handleCreate);
     this.genderSelect.addEventListener('change', (e) => {

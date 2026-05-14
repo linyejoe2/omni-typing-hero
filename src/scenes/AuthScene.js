@@ -36,6 +36,7 @@ export class AuthScene extends BaseScene {
 
   in() {
     elementManager.showScreen('authScreen')
+    elementManager.hidePanel()
   }
 
   // 監聽 Firebase 登入狀態
@@ -58,7 +59,7 @@ export class AuthScene extends BaseScene {
         playerPanel.update(charData);
         console.log("遊戲開始！角色：", charData.nickname);
       } else {
-        sceneManager.switchTo(new CreatorScene());
+        sceneManager.switchTo(new CreatorScene(charData));
       }
     } catch (error) {
       console.error("檢查角色失敗:", error);
@@ -74,7 +75,7 @@ export class AuthScene extends BaseScene {
         // 直接透過 sceneManager 切換，這會自動觸發當前場景的 exit()
         sceneManager.switchTo(new BattleScene(this.canvas, charData));
       } else {
-        sceneManager.switchTo(new CreatorScene(this.canvas));
+        sceneManager.switchTo(new CreatorScene(charData));
       }
     } catch (err) {
       if (err.message.indexOf("invalid-credential") !== -1) {
