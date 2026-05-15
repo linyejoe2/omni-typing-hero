@@ -1,5 +1,5 @@
 import { FirebaseService } from "../services/firebase.js";
-import { heroGenerator } from "../models/Hero/heroGenerater.js";
+import { heroGenerator } from "../models/Hero/heroGenerator.js";
 
 let _allRecords = [];
 let _currentJob = null;

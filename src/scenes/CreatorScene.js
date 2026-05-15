@@ -3,7 +3,7 @@ import { BattleScene } from './BattleScene.js';
 import { sceneManager } from './SceneManager.js';
 import { canvasManager } from '../ui/CanvasManager.js';
 import { Mage } from '../models/Hero/Mage.js';
-import { heroGenerator } from '../models/Hero/heroGenerater.js';
+import { heroGenerator } from '../models/Hero/heroGenerator.js';
 import { playerPanel } from '../ui/PlayerPanel.js';
 import { elementManager as EM } from '../ui/ElementManager.js';
 

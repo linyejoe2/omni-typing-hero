@@ -1,5 +1,5 @@
 import { Defender } from "../models/Hero/Defender.js";
-import { heroGenerator } from "../models/Hero/heroGenerater.js";
+import { heroGenerator } from "../models/Hero/heroGenerator.js";
 import { Mage } from "../models/Hero/Mage.js";
 import { FirebaseService } from "../services/firebase.js";
 import { canvasManager } from "./CanvasManager.js";

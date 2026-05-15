@@ -12,8 +12,9 @@ import { FirebaseService } from '../services/firebase.js';
 import { refreshLeaderboard } from '../ui/LeaderBoard.js';
 import { roundRect } from '../util.js';
 import { elementManager } from '../ui/ElementManager.js';
-import { heroGenerator } from '../models/Hero/heroGenerater.js';
+import { heroGenerator } from '../models/Hero/heroGenerator.js';
 import { playerPanel } from '../ui/PlayerPanel.js';
+import { Oni } from '../models/Monster/Oni.js';
 
 export class BattleScene extends BaseScene {
   constructor(canvas, charData) { // 建議把角色資料傳進來
@@ -121,8 +122,8 @@ export class BattleScene extends BaseScene {
   }
 
   createMonster() {
-    return new Kooni({
-      hp: 200,
+    return new Oni({
+      // hp: 200,
       x: 650,
       y: CONFIG.groundY - 20,
       rageThreshold: 50
@@ -186,8 +187,8 @@ export class BattleScene extends BaseScene {
     this.textInput.update();
 
     if (this.monster.isAttacking) {
-      this.monster.isAttacking = false;
-      this.enemyProjectiles.push(new EnemyFireball(this.monster.x, this.monster.y - 30, this.hero.x, this.hero.y - 30));
+      // this.monster.isAttacking = false;
+      // this.enemyProjectiles.push(new EnemyFireball(this.monster.x, this.monster.y - 30, this.hero.x, this.hero.y - 30));
     }
 
     // 更新所有投射物的位移

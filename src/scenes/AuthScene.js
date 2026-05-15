@@ -7,6 +7,7 @@ import { canvasManager } from '../ui/CanvasManager.js';
 import { playerPanel } from '../ui/PlayerPanel.js';
 import { BaseScene } from './BaseScene.js';
 import { elementManager } from '../ui/ElementManager.js';
+import { MapScene } from './MapScene.js';
 
 export class AuthScene extends BaseScene {
   constructor() {
@@ -55,7 +56,11 @@ export class AuthScene extends BaseScene {
     try {
       const charData = await FirebaseService.getCharacter(uid);
       if (charData && charData.job) {
-        sceneManager.switchTo(new BattleScene(this.canvas, charData));
+        // sceneMan
+        // ]lp[
+        // ager.switchTo(new BattleScene(this.canvas, charData));
+        
+        sceneManager.switchTo(new MapScene(this.canvas, charData));
         playerPanel.update(charData);
         console.log("遊戲開始！角色：", charData.nickname);
       } else {
@@ -73,7 +78,11 @@ export class AuthScene extends BaseScene {
 
       if (charData) {
         // 直接透過 sceneManager 切換，這會自動觸發當前場景的 exit()
-        sceneManager.switchTo(new BattleScene(this.canvas, charData));
+        // sceneManager.switchTo(new BattleScene(this.canvas, charData));
+        sceneManager.switchTo(new MapScene(this.canvas, charData));
+
+        
+        sceneManager.switchTo(new MapScene(this.canvas, charData));
       } else {
         sceneManager.switchTo(new CreatorScene(charData));
       }

@@ -4,7 +4,7 @@
 export class Kooni {
   constructor(config = {}) {
     // 基礎屬性
-    this.name = "Kooni"
+    this.name = "小鬼"
     this.maxHp = config.hp || 100;
     this.hp = this.maxHp;
     this._damage = 10;
@@ -179,5 +179,99 @@ export class Kooni {
     ctx.fillRect(-6, -18, 12, mouthHeight);
 
     ctx.restore();
+  }
+
+  renderAvatar(ctx) {
+    const size = 64;
+    ctx.clearRect(0, 0, size, size);
+
+    // 設定小鬼專屬調色盤
+    const palette = {
+      body: "#8b0000",       // 深紅
+      bodyShadow: "#5a0000", // 陰影紅
+      bodyLight: "#b22222",  // 高光紅
+      horn: "#ffffff",       // 角
+      hornShadow: "#bdc3c7", // 角陰影
+      eye: "#ffffff",
+      eyeInner: "#000000",
+      mouth: "#000000",
+      bg: "rgba(148, 0, 211, 0.1)" // 淡淡的怒氣紫背景
+    };
+
+    // --- 0. 背景圓圈 (裝飾感) ---
+    ctx.fillStyle = palette.bg;
+    ctx.beginPath();
+    ctx.arc(32, 32, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    // --- 1. 身體與肩膀 (小鬼雖然是個頭，但給點厚度) ---
+    // 肩膀/胸部輪廓
+    ctx.fillStyle = palette.bodyShadow;
+    ctx.fillRect(10, 50, 44, 14);
+
+    ctx.fillStyle = palette.body;
+    ctx.fillRect(14, 52, 36, 12);
+
+    // --- 2. 頭部主體 (方形但有側影) ---
+    // 左側陰影面
+    ctx.fillStyle = palette.bodyShadow;
+    ctx.fillRect(16, 16, 32, 36);
+
+    // 正面受光面
+    ctx.fillStyle = palette.body;
+    ctx.fillRect(20, 16, 28, 36);
+
+    // 頂部高光 (讓它看起來像個實體)
+    ctx.fillStyle = palette.bodyLight;
+    ctx.fillRect(20, 16, 28, 4);
+
+    // --- 3. 邪惡之角 (增加立體結構) ---
+    const drawHorn = (x, isRight) => {
+      ctx.fillStyle = palette.hornShadow;
+      ctx.beginPath();
+      // 角的底部寬一點
+      if (!isRight) {
+        ctx.moveTo(x, 16); ctx.lineTo(x - 12, 0); ctx.lineTo(x + 10, 16);
+      } else {
+        ctx.moveTo(x, 16); ctx.lineTo(x + 12, 0); ctx.lineTo(x - 10, 16);
+      }
+      ctx.fill();
+
+      // 角的前端高光
+      ctx.fillStyle = palette.horn;
+      ctx.beginPath();
+      if (!isRight) {
+        ctx.moveTo(x + 2, 16); ctx.lineTo(x - 6, 4); ctx.lineTo(x + 6, 16);
+      } else {
+        ctx.moveTo(x - 2, 16); ctx.lineTo(x + 6, 4); ctx.lineTo(x - 6, 16);
+      }
+      ctx.fill();
+    };
+    drawHorn(22, false); // 左角
+    drawHorn(42, true);  // 右角
+
+    // --- 4. 五官細節 ---
+    // 眼睛眶 (稍微拉長，更有神感)
+    ctx.fillStyle = palette.eye;
+    ctx.fillRect(24, 28, 6, 10); // 左眼眶
+    ctx.fillRect(38, 28, 6, 10); // 右眼眶
+
+    // 瞳孔 (向下看，增加壓迫感)
+    ctx.fillStyle = palette.eyeInner;
+    ctx.fillRect(25, 33, 4, 4);
+    ctx.fillRect(39, 33, 4, 4);
+
+    // 嘴巴 (稍微做出一點縫線感或厚度)
+    ctx.fillStyle = palette.mouth;
+    ctx.fillRect(27, 44, 14, 3);
+
+    // 如果想要表現怒氣，可以在嘴巴周圍加一點紅色溢光
+    ctx.fillStyle = "rgba(255, 0, 0, 0.4)";
+    ctx.fillRect(27, 43, 14, 1);
+
+    // --- 5. 臉部傷痕或裝飾 (增加細節) ---
+    ctx.fillStyle = palette.bodyShadow;
+    ctx.fillRect(22, 22, 2, 2); // 額頭小斑點
+    ctx.fillRect(40, 40, 2, 2);
   }
 }
