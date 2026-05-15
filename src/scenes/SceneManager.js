@@ -1,32 +1,39 @@
-import { CONFIG } from "../CONST";
-
 export class SceneManager {
-
   constructor() {
-    console.log("create SceneManager")
     this.currentScene = null;
+    this.app = null;
   }
 
-  // 切換場景，並傳入角色資料
+  init(app) {
+    this.app = app;
+  }
+
   switchTo(sceneInstance) {
-    if (this.currentScene && this.currentScene.exit) {
-      this.currentScene.exit();
+    if (this.currentScene) {
+      if (this.currentScene.exit) this.currentScene.exit();
+      // Remove previous scene's Pixi container from stage
+      if (this.currentScene.container && this.app) {
+        this.app.stage.removeChild(this.currentScene.container);
+      }
     }
+
     this.currentScene = sceneInstance;
-    if (this.currentScene.init) {
-      this.currentScene.init();
+
+    // Add new scene's Pixi container to stage (if it has one)
+    if (this.currentScene.container && this.app) {
+      this.app.stage.addChild(this.currentScene.container);
     }
-    this.currentScene.in()
+
+    if (this.currentScene.init) this.currentScene.init();
+    this.currentScene.in();
   }
 
-  // 這是由 Game Loop 持續呼叫的入口
   update() {
     if (this.currentScene) this.currentScene.update();
   }
 
-  draw(ctx) {
-    ctx.clearRect(0, 0, CONFIG.width, CONFIG.height);
-    if (this.currentScene) this.currentScene.draw(ctx);
+  draw() {
+    if (this.currentScene) this.currentScene.draw();
   }
 }
 

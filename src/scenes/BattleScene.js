@@ -1,167 +1,218 @@
+import { Container, Graphics, Text } from 'pixi.js';
 import { BaseScene } from './BaseScene.js';
 import { CONFIG } from '../CONST.js';
 import { Kooni } from '../models/Monster/Kooni.js';
-import { Mage } from '../models/Hero/Mage.js';
 import { Keyboard } from '../models/Keyboard.js';
 import { TextInput } from '../models/TextInput.js';
 import { DamageNumber } from '../models/Effect/DamageNumber.js';
 import { drawSword } from '../models/Icon/Sword.js';
 import { drawCoin } from '../models/Icon/Coin.js';
-import { EnemyFireball } from "../models/Projectile/EnemyFireball.js"
+import { EnemyFireball } from '../models/Projectile/EnemyFireball.js';
 import { FirebaseService } from '../services/firebase.js';
 import { refreshLeaderboard } from '../ui/LeaderBoard.js';
-import { roundRect } from '../util.js';
+import { roundRectGfx } from '../util.js';
 import { elementManager } from '../ui/ElementManager.js';
 import { heroGenerator } from '../models/Hero/heroGenerator.js';
 import { playerPanel } from '../ui/PlayerPanel.js';
 import { Oni } from '../models/Monster/Oni.js';
 
 export class BattleScene extends BaseScene {
-  constructor(canvas, charData) { // 建議把角色資料傳進來
+  constructor(canvas, charData) {
     super();
-    this.ctx = canvas;
-    this.width = canvas.canvas.width;
-    this.height = canvas.canvas.height;
-
-    // 初始化該場景需要的資料
+    // canvas is now the Pixi app — kept for compatibility but not used for drawing
     this.charData = charData;
 
-    // gamestate
     this.gold = 0;
     this.isGameOver = false;
     this.restartTimer = 60;
-    this.monster = { hp: CONFIG.monsterMaxHP, rage: 0 };
-
-    this.hero = this.createHero();
-    this.monster = this.createMonster();
-    this.monsterRebirthCountDown = 15;
-
-    this.textInput = new TextInput();
-    this.keyboard = new Keyboard();
-    this.projectiles = []
-    this.enemyProjectiles = []; // 存放所有 EnemyProjectile
-    this.particles = []; // 存放拖尾與爆炸粒子
-    this.damageNumbers = []; // 傷害數字
-
-    this.shakeTime = 0; // 震動剩餘幀數
-    this.shakeIntensity = 5; // 震動強度
-
+    this.shakeTime = 0;
+    this.shakeIntensity = 5;
     this.finalStats = {};
-
     this.isPaused = true;
     this.newGame = true;
+    this.frenzyParticles = [];
 
-    refreshLeaderboard("Kooni", this.charData.job)
+    this.projectiles = [];
+    this.enemyProjectiles = [];
+    this.particles = [];
+    this.damageNumbers = [];
 
-    // 重要：連結鍵盤與輸入邏輯
+    // ── Pixi container hierarchy ────────────────────────────────────────
+    this.container = new Container();
+
+    this.bgGfx = new Graphics();          // frenzy overlay
+    this.entityLayer = new Container();   // hero + monster
+    this.projectileGfx = new Graphics();  // all projectiles (cleared each frame)
+    this.particleGfx = new Graphics();    // all particles (cleared each frame)
+    this.damageLayer = new Container();   // DamageNumber Text objects
+    this.uiGfx = new Graphics();          // HP bars, gold, ATK
+    this.overlayGfx = new Graphics();     // pause / game-over / clear overlay
+
+    this.container.addChild(this.bgGfx);
+    this.container.addChild(this.entityLayer);
+    this.container.addChild(this.projectileGfx);
+    this.container.addChild(this.particleGfx);
+    this.container.addChild(this.damageLayer);
+    this.container.addChild(this.uiGfx);
+
+    // UI texts (persistent, updated each frame)
+    this._buildUITexts();
+
+    // Overlay texts (persistent, toggled visible)
+    this._buildOverlay();
+
+    // Entities
+    this.hero = this.createHero();
+    this.monster = this.createMonster();
+    this.textInput = new TextInput();
+    this.keyboard = new Keyboard();
+
+    this._addEntityContainers();
+    // Overlay must always be topmost — move it after entities
+    this.container.addChild(this.overlayContainer);
+
+    refreshLeaderboard('Kooni', this.charData.job);
+
+    // Keyboard → game input
     this.keyboard.onKeyPress = async (key) => {
-
       this.newGame = false;
-
-      if (key === "Escape") {
-        if (!this.isPaused) {
-          this.pauseGame();
-        } else {
-          this.resumeGame();
-        }
+      if (key === 'Escape') {
+        this.isPaused ? this.resumeGame() : this.pauseGame();
         return;
       }
+      if (this.isPaused) { if (key === ' ') this.resumeGame(); return; }
+      if (this.isGameOver) { this.resetGame(); return; }
 
-      if (this.isPaused) {
-        if (key === " ") {
-          this.resumeGame();
-        }
-        return; // 暫停時不處理其他戰鬥按鍵
-      }
-
-      if (this.isGameOver) {
-        this.resetGame()
-        return
-      };
       const result = this.textInput.handleInput(key);
-
-      if (result.includes("WORD_COMPLETE")) {
-        // 單字完成！英雄發動攻擊
-        const projectile = this.hero.attack(this.monster.x, this.monster.y, result === "WORD_COMPLETE_CRIT");
+      if (result.includes('WORD_COMPLETE')) {
+        const projectile = this.hero.attack(this.monster.x, this.monster.y, result === 'WORD_COMPLETE_CRIT');
         if (projectile) this.projectiles.push(projectile);
-      } else if (result === "CHAR_WRONG") {
+      } else if (result === 'CHAR_WRONG') {
         this.monster.penalizeMiss();
       }
     };
   }
 
+  _buildUITexts() {
+    const makeText = (str, size, color = '#ffffff', align = 'left') =>
+      new Text({ text: str, style: { fontFamily: 'Courier New', fontSize: size, fontWeight: 'bold', fill: color, align } });
+
+    this.heroHpText = makeText('', 10, '#ffffff', 'center');
+    this.heroHpText.anchor.set(0.5, 0.5);
+
+    this.goldText = makeText('GOLD: 0', 14);
+
+    this.monsterAtkText = makeText('ATK: ?', 14);
+
+    [this.heroHpText, this.goldText, this.monsterAtkText].forEach(t => this.container.addChild(t));
+  }
+
+  _buildOverlay() {
+    this.overlayContainer = new Container();
+    this.overlayContainer.visible = false;
+    this.container.addChild(this.overlayContainer);
+
+    this.overlayBgGfx = new Graphics();
+    this.overlayContainer.addChild(this.overlayBgGfx);
+
+    const centered = (str, size, color = '#ffffff') => {
+      const t = new Text({ text: str, style: { fontFamily: 'Courier New', fontSize: size, fontWeight: 'bold', fill: color, align: 'center' } });
+      t.anchor.set(0.5, 0.5);
+      return t;
+    };
+
+    // Pause overlay
+    this.pauseTitleText = centered('', 45, '#00d4ff');
+    this.pauseTipsText = centered('', 14, '#d3d3d3');
+    this.pauseHintText = centered('', 20, '#ffffff');
+
+    // Game-over / game-clear title
+    this.endTitleText = centered('', 50, '#ffffff');
+    this.endTimeText = centered('', 30, '#62fd4e');
+    this.endHintText = centered('', 20, '#ffffff');
+    this.endHintText2 = centered('', 12, '#d3d3d3');
+
+    // Stat card texts (4 cards)
+    this.cardTexts = [0, 1, 2, 3].map(() => ({
+      label: centered('', 14, '#aaaaaa'),
+      value: centered('', 28, '#ffffff'),
+    }));
+
+    [
+      this.pauseTitleText, this.pauseTipsText, this.pauseHintText,
+      this.endTitleText, this.endTimeText, this.endHintText, this.endHintText2,
+      ...this.cardTexts.flatMap(c => [c.label, c.value]),
+    ].forEach(t => this.overlayContainer.addChild(t));
+  }
+
+  _addEntityContainers() {
+    this.entityLayer.addChild(this.monster.container);
+    this.entityLayer.addChild(this.hero.container);
+    this.container.addChild(this.textInput.container);
+    this.container.addChild(this.keyboard.container);
+  }
+
   in() {
-    elementManager.showScreen('gameScreen')
-    elementManager.showPanel()
-    playerPanel.update(this.charData)
+    elementManager.showScreen('gameScreen');
+    elementManager.showPanel();
+    playerPanel.update(this.charData);
   }
 
   updateFinalStats() {
-    if (Object.keys(this.finalStats).length > 0) return
+    if (Object.keys(this.finalStats).length > 0) return;
     this.finalStats = {
       monster: this.monster.name,
       nickname: this.charData.nickname,
-      clear: this.monster.status == "DEAD",
+      clear: this.monster.status === 'DEAD',
       job: this.hero.job,
       gender: this.hero.gender,
       wpm: this.textInput.wpm,
       dps: this.textInput.dps,
       accuracy: Math.round(this.textInput.accuracy * 100) / 100,
       maxCombo: this.textInput.maxCombo,
-      seconds: Math.round(this.textInput.totalActiveTime * 10) / 10000
+      seconds: Math.round(this.textInput.totalActiveTime * 10) / 10000,
     };
   }
 
-  isGameCleared() {
-    return this.monster.hp <= 0;
-  }
+  isGameCleared() { return this.monster.hp <= 0; }
 
-  createHero() {
-    const data = { ...this.charData, onDeath: this.onDeath.bind(this) };
-    return heroGenerator(data)
-  }
+  createHero() { return heroGenerator({ ...this.charData, onDeath: this.onDeath.bind(this) }); }
 
   createMonster() {
-    return new Oni({
-      // hp: 200,
-      x: 650,
-      y: CONFIG.groundY - 20,
-      rageThreshold: 50
-    });
+    return new Oni({ x: 650, y: CONFIG.groundY - 20, rageThreshold: 50 });
   }
 
   onDeath() {
     if (this.isGameOver) return;
     this.isGameOver = true;
-    this.updateFinalStats()
-
+    this.updateFinalStats();
     const user = FirebaseService.auth.currentUser;
     if (!user) return;
-
     FirebaseService.addBattleRecord(user.uid, this.finalStats);
   }
 
   onMonsterDie() {
     if (this.isGameOver) return;
     this.isGameOver = true;
-    this.updateFinalStats()
-
+    this.updateFinalStats();
     const user = FirebaseService.auth.currentUser;
     if (!user) return;
-
-    // 1. 執行畫面上提到的 "Save record into leaderboard"
     FirebaseService.addBattleRecord(user.uid, this.finalStats);
-
-    // 2. 更新角色的生涯數據 (Max WPM 等)
     FirebaseService.updatePersonalBest(user.uid, this.finalStats);
-
     FirebaseService.updateLeaderboard(user.uid, this.finalStats);
   }
 
   resetGame() {
-    if (this.restartTimer) return
+    if (this.restartTimer) return;
     this.isGameOver = false;
     this.restartTimer = 60;
+
+    // Remove old entity containers
+    this.entityLayer.removeChildren();
+    this.container.removeChild(this.textInput.container);
+    this.container.removeChild(this.keyboard.container);
+    this.damageLayer.removeChildren();
+
     this.hero = this.createHero();
     this.monster = this.createMonster();
     this.textInput = new TextInput();
@@ -169,444 +220,294 @@ export class BattleScene extends BaseScene {
     this.finalStats = {};
     this.isPaused = true;
     this.newGame = true;
-    return
+    this.projectiles = [];
+    this.enemyProjectiles = [];
+    this.particles = [];
+    this.damageNumbers = [];
+    this.frenzyParticles = [];
+
+    this._addEntityContainers();
+    this.container.addChild(this.overlayContainer); // keep overlay on top
   }
 
-  // 1. 邏輯更新：處理物理、碰撞、計數
   update() {
     if (this.isPaused) return;
-
-    if (this.isGameOver && this.restartTimer) {
-      this.restartTimer--
-      return
-    }
+    if (this.isGameOver && this.restartTimer) { this.restartTimer--; return; }
 
     this.monster.update();
     this.hero.update();
     this.keyboard.update();
     this.textInput.update();
 
-    if (this.monster.isAttacking) {
-      // this.monster.isAttacking = false;
-      // this.enemyProjectiles.push(new EnemyFireball(this.monster.x, this.monster.y - 30, this.hero.x, this.hero.y - 30));
-    }
-
-    // 更新所有投射物的位移
-    this.projectiles.forEach((pj, index) => {
+    // Projectiles
+    this.projectiles.forEach((pj, i) => {
       const isHit = pj.update(this.particles);
       if (isHit) {
-        // this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
-        this.monster.takeDamage(pj.damage, pj.isCrit); // 怪物受傷
-        this.textInput.recordDamage(pj.damage)
-
-        this.damageNumbers.push(new DamageNumber(
-          this.monster.damageNumberX,
-          this.monster.damageNumberY,
-          pj.damage, // 確保 Fireball 有存這項資訊
-          pj.isCrit
-        ));
+        this.monster.takeDamage(pj.damage, pj.isCrit);
+        this.textInput.recordDamage(pj.damage);
+        const dn = new DamageNumber(this.monster.damageNumberX, this.monster.damageNumberY, pj.damage, pj.isCrit);
+        dn.getDisplayObjects().forEach(obj => this.damageLayer.addChild(obj));
+        this.damageNumbers.push(dn);
       }
-      if (!pj.alive) this.projectiles.splice(index, 1);
+      if (!pj.alive) this.projectiles.splice(i, 1);
     });
 
-    // 更新所有敵人投射物的位移
-    this.enemyProjectiles.forEach((pj, index) => {
+    this.enemyProjectiles.forEach((pj, i) => {
       const isHit = pj.update(this.particles);
       if (isHit) {
-        this.shakeTime = 8; // 設定震動時間（約 0.13 秒）
+        this.shakeTime = 8;
         const dmg = this.hero.takeDamage(this.monster.damage());
-
-        this.damageNumbers.push(new DamageNumber(
-          this.hero.x - 25,
-          this.hero.y - 30,
-          dmg
-        ));
+        const dn = new DamageNumber(this.hero.x - 25, this.hero.y - 30, dmg);
+        dn.getDisplayObjects().forEach(obj => this.damageLayer.addChild(obj));
+        this.damageNumbers.push(dn);
       }
-      if (!pj.alive) this.enemyProjectiles.splice(index, 1);
+      if (!pj.alive) this.enemyProjectiles.splice(i, 1);
     });
 
-    // 2. 統一更新粒子
+    // Particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
-      const p = this.particles[i];
-      p.update();
-      // 修正判斷條件：生命值小於等於 0 就移除
-      if (p.life <= 0) {
-        this.particles.splice(i, 1);
-      }
+      this.particles[i].update();
+      if (this.particles[i].life <= 0) this.particles.splice(i, 1);
     }
 
-    // 2. 更新傷害數字
+    // Damage numbers
     for (let i = this.damageNumbers.length - 1; i >= 0; i--) {
       this.damageNumbers[i].update();
       if (this.damageNumbers[i].life <= 0) {
+        this.damageNumbers[i].getDisplayObjects().forEach(obj => this.damageLayer.removeChild(obj));
         this.damageNumbers.splice(i, 1);
       }
     }
 
-    // 震動倒數
-    if (this.shakeTime > 0) {
-      this.shakeTime--;
-    }
-
-    // 怪物死亡
-    if (this.monster.status == "DEAD") this.onMonsterDie()
+    if (this.shakeTime > 0) this.shakeTime--;
+    if (this.monster.status === 'DEAD') this.onMonsterDie();
   }
 
-  // 2. 畫面繪製：只負責畫圖
-  // 為了符合 SceneManager 的 draw(ctx)，我們把參數統一
-  draw(ctx) {
-    // 1. 先清除整個畫布 (最重要，且要在 save 之前)
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  draw() {
+    const W = CONFIG.width;
+    const H = CONFIG.height;
 
-    ctx.save();
+    // Screen shake — offset the whole scene container
+    if (this.shakeTime > 0) {
+      this.container.x = (Math.random() - 0.5) * this.shakeIntensity;
+      this.container.y = (Math.random() - 0.5) * this.shakeIntensity;
+    } else {
+      this.container.x = 0;
+      this.container.y = 0;
+    }
 
-    this.drawUI(ctx);
-
-    // BattleScene.js -> draw()
+    // Background effects (frenzy overlay + frenzy particles)
+    this.bgGfx.clear();
     if (this.textInput.isFrenzy) {
-      ctx.save();
-      // 簡單的紅色覆蓋濾鏡
-      ctx.fillStyle = "rgba(255, 69, 0, 0.15)";
-      ctx.fillRect(0, 0, CONFIG.width, CONFIG.height);
-
-      // 可以在畫面上隨機畫一些火粒子
-      this.drawFrenzyParticles(ctx);
-      ctx.restore();
+      this.bgGfx.rect(0, 0, W, H).fill({ color: '#ff4500', alpha: 0.15 });
+      this._drawFrenzyParticles();
     }
 
-    // 3. 如果正在震動，對整個畫布進行隨機偏移
-    if (this.shakeTime > 0) {
-      const dx = (Math.random() - 0.5) * this.shakeIntensity;
-      const dy = (Math.random() - 0.5) * this.shakeIntensity;
-      ctx.translate(dx, dy);
+    // Draw entities
+    this.hero.draw();
+    this.monster.draw();
+
+    // Projectiles + particles onto shared Graphics (cleared each frame)
+    this.projectileGfx.clear();
+    this.projectiles.forEach(p => p.draw(this.projectileGfx));
+    this.enemyProjectiles.forEach(p => p.draw(this.projectileGfx));
+
+    this.particleGfx.clear();
+    this.particles.forEach(p => p.draw(this.particleGfx));
+
+    // TextInput + Keyboard draw their own containers
+    this.textInput.draw();
+    this.keyboard.draw();
+
+    // UI (HP bars, gold, ATK)
+    this._drawUI();
+
+    // Overlays (pause / game-over / game-clear)
+    if (this.isPaused) {
+      this._drawPause(W, H);
+    } else if (this.isGameOver) {
+      if (this.isGameCleared()) this._drawGameClear(W, H);
+      else this._drawGameOver(W, H);
+    } else {
+      this.overlayContainer.visible = false;
     }
-
-    // 1. 繪製背景與戰鬥區 (Hero, Monster)
-    this.hero.draw(ctx);
-    this.monster.draw(ctx);
-
-    // 畫投射物
-    this.projectiles.forEach(p => p.draw(ctx));
-    this.enemyProjectiles.forEach(p => p.draw(ctx));
-
-    // 繪製傷害數字
-    this.damageNumbers.forEach(num => num.draw(ctx));
-
-    // 畫粒子 (粒子通常在最上層，或是怪物後方，視你喜好決定順序)
-    this.particles.forEach(p => p.draw(ctx));
-
-    // 2. 繪製中間的打字區域
-    this.textInput.draw(ctx);
-
-    // 3. 繪製底部的虛擬鍵盤
-    this.keyboard.draw(ctx);
-
-    if (this.isPaused) this.drawPause(ctx)
-
-    if (this.isGameOver) this.isGameCleared() ? this.drawGameClear(ctx) : this.drawGameOver(ctx)
-
-    ctx.restore(); // --- 重要：結束後還原狀態，避免影響下一幀 ---
   }
 
-  drawUI(ctx) {
-    // 血條 金錢
-    const bw = 200;
-    const bh = 16;
-    const infoX = 50; // 與血條對齊
-    const infoY = 25;  // Rage Bar 下方的起始高度
-
-    ctx.fillStyle = "#333"; ctx.fillRect(infoX, infoY, bw, bh);
-    ctx.fillStyle = "#ff3300"; ctx.fillRect(infoX, infoY, (Math.max(0, this.hero.currentHp / this.hero.hp)) * bw, bh);
-    ctx.strokeStyle = "#d4af37"; ctx.strokeRect(infoX, infoY, bw, bh);
-    // 繪製血量文字 (置中)
-    ctx.save();
-    ctx.fillStyle = "#fff"; // 文字顏色
-    ctx.font = "bold 10px Arial"; // 根據 bh 調整字體大小
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // 設定文字在血條的正中央
-    const textX = infoX + bw / 2;
-    const textY = infoY + bh / 2 + 1; // +1 是為了視覺上的微調補償
-    const hpText = `${Math.ceil(this.hero.currentHp)} / ${this.hero.hp}`;
-
-    // 選擇性：加上深色描邊讓數字更清晰 (防止在紅色背景下看不清楚)
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.lineWidth = 2;
-    ctx.strokeText(hpText, textX, textY);
-
-    // 填充文字本體
-    ctx.fillText(hpText, textX, textY);
-
-    ctx.restore();
-
-    drawCoin(ctx, infoX + 10, infoY + 30)
-    ctx.fillStyle = "#ffffff"; ctx.font = "bold 14px 'Courier New"; ctx.textAlign = "left";
-    ctx.fillText(`GOLD: ${this.charData.gold}`, infoX + 30, infoY + 35);
-
-    // 怪物的血條與反擊條
-    const mInfoX = 550; // 與血條對齊
-    const mInfoY = 58;  // Rage Bar 下方的起始高度
-    // HP Bar
-    ctx.fillStyle = "#333"; ctx.fillRect(mInfoX, 25, bw, bh);
-    ctx.fillStyle = "#ff3300"; ctx.fillRect(mInfoX, 25, (Math.max(0, this.monster.hp / this.monster.maxHp)) * bw, bh);
-    // Rage Bar (反擊值)
-    ctx.fillStyle = "#222"; ctx.fillRect(mInfoX, 42, bw, 6);
-    ctx.fillStyle = "#9400d3"; ctx.fillRect(mInfoX, 42, (Math.min(this.monster.rageThreshold, this.monster.rage / this.monster.rageThreshold)) * bw, 6);
-    ctx.strokeStyle = "#d4af37"; ctx.strokeRect(mInfoX, 25, bw, 23);
-
-    // 1. 繪製像素小劍圖示
-    drawSword(ctx, mInfoX, mInfoY)
-
-    // 2. 繪製攻擊力文字
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 14px 'Courier New'";
-    ctx.textAlign = "left";
-    // 加上 "ATK" 字樣與數值，並稍微往右偏移避開圖示
-    ctx.fillText(`ATK: ${this.monster._damage}`, mInfoX + 30, mInfoY + 10);
-  }
-
-  drawFrenzyParticles(ctx) {
-    // 如果沒有粒子陣列，先初始化一個 (專門給狂暴模式用)
-    if (!this.frenzyParticles) this.frenzyParticles = [];
-
-    // 1. 每幀產生新粒子 (產生頻率可以根據需求調整)
+  _drawFrenzyParticles() {
     if (Math.random() > 0.4) {
       this.frenzyParticles.push({
-        x: Math.random() * ctx.canvas.width,
-        y: CONFIG.groundY + 20, // 從畫面底部下方一點點開始
+        x: Math.random() * CONFIG.width,
+        y: CONFIG.groundY + 20,
         size: Math.random() * 6 + 4,
-        speedY: Math.random() * -4 - 2, // 往上飄的速度
-        speedX: (Math.random() - 0.5) * 2, // 輕微左右晃動
-        life: 1.0, // 生命週期 1.0 -> 0
-        colorType: Math.random() // 用來隨機分配顏色
+        speedY: Math.random() * -4 - 2,
+        speedX: (Math.random() - 0.5) * 2,
+        life: 1.0,
       });
     }
-
-    // 2. 更新與繪製
-    ctx.save();
     for (let i = this.frenzyParticles.length - 1; i >= 0; i--) {
       const p = this.frenzyParticles[i];
-
-      // 更新位置
-      p.x += p.speedX;
-      p.y += p.speedY;
-      p.life -= 0.015; // 消失速度
-
-      // 根據生命週期改變顏色 (亮黃 -> 橘紅 -> 深紅)
-      let color;
-      if (p.life > 0.6) {
-        color = "#ffea00"; // 亮黃
-      } else if (p.life > 0.3) {
-        color = "#ff4500"; // 橘紅
-      } else {
-        color = "#8b0000"; // 深紅
-      }
-
-      // 繪製像素粒子
-      ctx.globalAlpha = p.life;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = color;
-      ctx.fillStyle = color;
-
-      // 粒子越往上越小
-      const currentSize = p.size * p.life;
-      ctx.fillRect(p.x, p.y, currentSize, currentSize);
-
-      // 移除死亡粒子
-      if (p.life <= 0) {
-        this.frenzyParticles.splice(i, 1);
-      }
+      p.x += p.speedX; p.y += p.speedY; p.life -= 0.015;
+      const color = p.life > 0.6 ? '#ffea00' : p.life > 0.3 ? '#ff4500' : '#8b0000';
+      const sz = p.size * p.life;
+      this.bgGfx.rect(p.x, p.y, sz, sz).fill({ color, alpha: p.life });
+      if (p.life <= 0) this.frenzyParticles.splice(i, 1);
     }
-    ctx.restore();
   }
 
-  drawGameClear(ctx) {
-    const { width, height } = ctx.canvas;
+  _drawUI() {
+    const bw = 200;
+    const bh = 16;
+    const infoX = 50;
+    const infoY = 25;
 
-    // 1. 通關畫面全螢幕遮罩
-    ctx.save();
-    ctx.fillStyle = "rgba(63, 63, 63, 0.85)"; // 加深一點背景，讓卡片更突出
-    ctx.fillRect(0, 0, width, height);
+    this.uiGfx.clear();
 
-    // 2. 主標題
-    ctx.fillStyle = "#62fd4e"; // 經典通關綠
-    ctx.font = "bold 50px 'Courier New'";
-    ctx.textAlign = "center";
-    ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
-    ctx.shadowBlur = 15;
-    ctx.fillText("You beat the Kooni!", width / 2, height / 2 - 140);
-    ctx.shadowBlur = 0; // 重置陰影
+    // Hero HP bar
+    this.uiGfx.rect(infoX, infoY, bw, bh).fill('#333333');
+    this.uiGfx.rect(infoX, infoY, Math.max(0, this.hero.currentHp / this.hero.hp) * bw, bh).fill('#ff3300');
+    this.uiGfx.rect(infoX, infoY, bw, bh).stroke({ color: '#d4af37', width: 1 });
 
-    this.drawCardData(ctx)
+    this.heroHpText.x = infoX + bw / 2;
+    this.heroHpText.y = infoY + bh / 2 + 1;
+    this.heroHpText.text = `${Math.ceil(this.hero.currentHp)} / ${this.hero.hp}`;
 
-    ctx.font = "bold 30px 'Courier New'";
-    ctx.textAlign = "center";
-    ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
-    ctx.shadowBlur = 15;
-    ctx.fillText("You spend " + this.finalStats.seconds + "s", width / 2, height / 2 + 100);
-    ctx.shadowBlur = 0; // 重置陰影
+    // Gold icon + text
+    drawCoin(this.uiGfx, infoX + 10, infoY + 30);
+    this.goldText.x = infoX + 30;
+    this.goldText.y = infoY + 26;
+    this.goldText.text = `GOLD: ${this.charData.gold}`;
 
-    ctx.fillStyle = "#fff";
-    ctx.font = "20px 'Courier New'";
-    ctx.fillText("Press any key to search another Kooni", width / 2, height / 2 + 200);
-    ctx.restore();
+    // Monster HP + rage bars
+    const mInfoX = 550;
+    const mInfoY = 58;
+    this.uiGfx.rect(mInfoX, 25, bw, bh).fill('#333333');
+    this.uiGfx.rect(mInfoX, 25, Math.max(0, this.monster.hp / this.monster.maxHp) * bw, bh).fill('#ff3300');
+    this.uiGfx.rect(mInfoX, 42, bw, 6).fill('#222222');
+    this.uiGfx.rect(mInfoX, 42, Math.min(1, this.monster.rage / this.monster.rageThreshold) * bw, 6).fill('#9400d3');
+    this.uiGfx.rect(mInfoX, 25, bw, 23).stroke({ color: '#d4af37', width: 1 });
+
+    drawSword(this.uiGfx, mInfoX, mInfoY);
+    this.monsterAtkText.x = mInfoX + 30;
+    this.monsterAtkText.y = mInfoY;
+    this.monsterAtkText.text = `ATK: ${this.monster._damage}`;
   }
 
-  drawGameOver(ctx) {
-    const { width, height } = ctx.canvas;
+  _showOverlay(bgColor, bgAlpha = 0.85) {
+    this.overlayContainer.visible = true;
+    this.overlayBgGfx.clear();
+    this.overlayBgGfx.rect(0, 0, CONFIG.width, CONFIG.height).fill({ color: bgColor, alpha: bgAlpha });
 
-    // 死亡畫面遮罩
-    ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.8)";
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.fillStyle = "#ff0000";
-    ctx.font = "bold 50px 'Courier New'";
-    ctx.textAlign = "center";
-    ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
-    ctx.shadowBlur = 15;
-    // ctx.fillText("戰死沙場", ctx.canvas.width / 2, ctx.canvas.height / 2 - 50);
-    ctx.fillText("You DIE", width / 2, height / 2 - 140);
-    ctx.shadowBlur = 0; // 重置陰影
-
-    this.drawCardData(ctx)
-
-    ctx.font = "bold 30px 'Courier New'";
-    ctx.textAlign = "center";
-    ctx.shadowColor = "rgba(98, 253, 78, 0.5)";
-    ctx.shadowBlur = 15;
-    ctx.fillText("You fell after " + this.finalStats.seconds + "s", width / 2, height / 2 + 100);
-    ctx.shadowBlur = 0; // 重置陰影
-
-    ctx.fillStyle = "#d3d3d3";
-    ctx.font = "12px 'Courier New'";
-    ctx.fillText("Defeat the monster to record your score", width / 2, height / 2 + 150);
-
-    ctx.fillStyle = "#fff";
-    ctx.font = "20px 'Courier New'";
-    ctx.fillText("Press any key to resurrect", width / 2, height / 2 + 200);
-    // ctx.fillText("按下任何鍵重新開始", ctx.canvas.width / 2, ctx.canvas.height / 2 + 20);
-    ctx.restore();
+    // Hide all overlay texts first
+    [
+      this.pauseTitleText, this.pauseTipsText, this.pauseHintText,
+      this.endTitleText, this.endTimeText, this.endHintText, this.endHintText2,
+      ...this.cardTexts.flatMap(c => [c.label, c.value]),
+    ].forEach(t => { t.visible = false; });
   }
 
-  drawCardData(ctx) {
-    const { width, height } = ctx.canvas;
+  _drawPause(W, H) {
+    this._showOverlay('#0a0a19');
 
-    // 3. 繪製數據卡片 (Max Combo, WPM, DPS, Accuracy)
+    this.pauseTitleText.visible = true;
+    this.pauseTitleText.x = W / 2; this.pauseTitleText.y = H / 2 - 100;
+    this.pauseTitleText.text = this.newGame ? '準備遊戲' : '暫停';
+    this.pauseTitleText.style.fill = '#00d4ff';
+
+    // Tips box (draw on overlay gfx)
+    const tipBoxW = 400; const tipBoxH = 110;
+    const boxX = W / 2 - tipBoxW / 2; const boxY = H / 2 - 40;
+    this.overlayBgGfx.rect(boxX, boxY, tipBoxW, tipBoxH).fill({ color: '#ffffff', alpha: 0.05 });
+    this.overlayBgGfx.rect(boxX, boxY, tipBoxW, tipBoxH).stroke({ color: '#444444', width: 2 });
+
+    const tips = ['打字擊敗怪物', '打錯字會激怒怪物', '中間綠色能量條集滿 = 狂暴', '按下 ESC 可以暫停'];
+    this.pauseTipsText.visible = true;
+    this.pauseTipsText.x = W / 2; this.pauseTipsText.y = boxY + tipBoxH / 2;
+    this.pauseTipsText.text = tips.join('\n');
+
+    this.pauseHintText.visible = true;
+    this.pauseHintText.x = W / 2; this.pauseHintText.y = H / 2 + 120;
+    const alpha = Math.abs(Math.sin(Date.now() / 500));
+    this.pauseHintText.alpha = alpha;
+    this.pauseHintText.text = this.newGame ? '按下空白鍵開始戰鬥' : '按下空白鍵繼續';
+  }
+
+  _drawCardData(W, H) {
+    const stats = this.finalStats;
     const cardData = [
-      { label: "MAX COMBO", value: this.finalStats.maxCombo, color: "#ffeb3b" },
-      { label: "WPM", value: this.finalStats.wpm, color: "#03a9f4" },
-      { label: "DPS", value: this.finalStats.dps, color: "#ff4500" },
-      { label: "ACCURACY", value: `${this.finalStats.accuracy}%`, color: "#8bc34a" }
+      { label: 'MAX COMBO', value: stats.maxCombo, color: '#ffeb3b' },
+      { label: 'WPM', value: stats.wpm, color: '#03a9f4' },
+      { label: 'DPS', value: stats.dps, color: '#ff4500' },
+      { label: 'ACCURACY', value: `${stats.accuracy}%`, color: '#8bc34a' },
     ];
 
-    const cardW = 140;
-    const cardH = 100;
-    const gap = 20;
-    const totalW = (cardW * 4) + (gap * 3);
-    let startX = (width - totalW) / 2;
-    const cardY = height / 2 - 60;
+    const cardW = 140; const cardH = 100; const gap = 20;
+    const totalW = cardW * 4 + gap * 3;
+    const startX = (W - totalW) / 2;
+    const cardY = H / 2 - 60;
 
     cardData.forEach((data, i) => {
       const x = startX + i * (cardW + gap);
+      roundRectGfx(this.overlayBgGfx, x, cardY, cardW, cardH, 12,
+        { color: '#ffffff', alpha: 0.1 }, { color: '#ffffff', alpha: 0.2 });
 
-      // 繪製卡片背景 (磨砂玻璃感)
-      ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-      roundRect(ctx, x, cardY, cardW, cardH, 12, true, true);
+      this.cardTexts[i].label.visible = true;
+      this.cardTexts[i].label.x = x + cardW / 2;
+      this.cardTexts[i].label.y = cardY + 35;
+      this.cardTexts[i].label.text = data.label;
 
-      // 標籤文字
-      ctx.font = "bold 14px 'Courier New'";
-      ctx.fillStyle = "#aaa";
-      ctx.fillText(data.label, x + cardW / 2, cardY + 35);
-
-      // 數值文字
-      ctx.font = "bold 28px 'Courier New'";
-      ctx.fillStyle = data.color;
-      ctx.fillText(data.value, x + cardW / 2, cardY + 75);
+      this.cardTexts[i].value.visible = true;
+      this.cardTexts[i].value.x = x + cardW / 2;
+      this.cardTexts[i].value.y = cardY + 75;
+      this.cardTexts[i].value.text = String(data.value);
+      this.cardTexts[i].value.style.fill = data.color;
     });
   }
 
-  pauseGame() {
-    this.isPaused = true;
+  _drawGameClear(W, H) {
+    this._showOverlay('#3f3f3f');
+
+    this.endTitleText.visible = true;
+    this.endTitleText.x = W / 2; this.endTitleText.y = H / 2 - 140;
+    this.endTitleText.text = 'You beat the Kooni!';
+    this.endTitleText.style.fill = '#62fd4e';
+
+    this._drawCardData(W, H);
+
+    this.endTimeText.visible = true;
+    this.endTimeText.x = W / 2; this.endTimeText.y = H / 2 + 100;
+    this.endTimeText.text = `You spend ${this.finalStats.seconds}s`;
+    this.endTimeText.style.fill = '#62fd4e';
+
+    this.endHintText.visible = true;
+    this.endHintText.x = W / 2; this.endHintText.y = H / 2 + 200;
+    this.endHintText.text = 'Press any key to search another Kooni';
   }
 
-  resumeGame() {
-    this.isPaused = false;
+  _drawGameOver(W, H) {
+    this._showOverlay('#000000', 0.8);
+
+    this.endTitleText.visible = true;
+    this.endTitleText.x = W / 2; this.endTitleText.y = H / 2 - 140;
+    this.endTitleText.text = 'You DIE';
+    this.endTitleText.style.fill = '#ff0000';
+
+    this._drawCardData(W, H);
+
+    this.endTimeText.visible = true;
+    this.endTimeText.x = W / 2; this.endTimeText.y = H / 2 + 100;
+    this.endTimeText.text = `You fell after ${this.finalStats.seconds}s`;
+    this.endTimeText.style.fill = '#62fd4e';
+
+    this.endHintText2.visible = true;
+    this.endHintText2.x = W / 2; this.endHintText2.y = H / 2 + 150;
+    this.endHintText2.text = 'Defeat the monster to record your score';
+
+    this.endHintText.visible = true;
+    this.endHintText.x = W / 2; this.endHintText.y = H / 2 + 200;
+    this.endHintText.text = 'Press any key to resurrect';
   }
 
-  handleMouseDown(e) {
-    if (this.isPaused) {
-      this.resumeGame();
-    }
-  }
-
-  drawPause(ctx) {
-    const width = CONFIG.width
-    const height = CONFIG.height
-
-    // 1. 背景遮罩 (使用深藍色或深紫色，與死亡的紅色區隔)
-    ctx.save();
-    ctx.fillStyle = "rgba(10, 10, 25, 0.85)";
-    ctx.fillRect(0, 0, width, height);
-
-    // 2. 標題：TIME STOPPED
-    ctx.fillStyle = "#00d4ff"; // 魔法藍
-    ctx.font = "bold 45px 'Courier New'";
-    ctx.textAlign = "center";
-    ctx.shadowColor = "#00d4ff";
-    ctx.shadowBlur = 15;
-    ctx.fillText(this.newGame ? "準備遊戲" : "暫停", width / 2, height / 2 - 100);
-    ctx.shadowBlur = 0;
-
-    // 3. 繪製 Tips 框
-    const tipBoxW = 400;
-    const tipBoxH = 110;
-    const boxX = width / 2 - tipBoxW / 2;
-    const boxY = height / 2 - 40;
-
-    ctx.strokeStyle = "#444";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(boxX, boxY, tipBoxW, tipBoxH);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-    ctx.fillRect(boxX, boxY, tipBoxW, tipBoxH);
-
-    const tipses = [
-      "打字擊敗怪物",
-      "打錯字會激怒怪物",
-      "中間綠色能量條集滿 = 狂暴",
-      "按下 ESC 可以暫停"
-    ]
-
-    // 4. 顯示隨機 Tip (建議在進入暫停時先選定一個 index，避免 draw loop 每一幀都隨機換)
-    ctx.fillStyle = "#d3d3d3";
-    ctx.font = "14px 'Courier New'";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle"; // 設定基準線為中間，更方便計算
-
-    const lineHeight = 22; // 設定每一行的高度
-    const totalTextHeight = tipses.length * lineHeight; // 計算文字內容的總高度
-
-    // 起始位置 = 框框頂部 + (框框高度 - 文字總高度) / 2 + 第一行的一半位移
-    // 簡單點說就是從框框中心往上推 (總高度/2)，但要補回第一行的中心偏置
-    const startY = boxY + (tipBoxH - totalTextHeight) / 2 + (lineHeight / 2);
-
-    tipses.forEach((tips, i) => {
-      ctx.fillText(tips, width / 2, startY + (i * lineHeight));
-    });
-
-    // 5. 繼續提示
-    // 這裡做一個簡單的呼吸燈效果
-    const alpha = Math.abs(Math.sin(Date.now() / 500));
-    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-    ctx.font = "20px 'Courier New'";
-    ctx.fillText(this.newGame ? "按下空白鍵開始戰鬥" : "按下空白鍵繼續", width / 2, height / 2 + 120);
-
-    // ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-    // ctx.font = "12px 'Courier New'";
-    // ctx.fillText("(Click anywhere to continue)", width / 2, height / 2 + 150);
-
-    ctx.restore();
-  }
+  pauseGame() { this.isPaused = true; }
+  resumeGame() { this.isPaused = false; }
+  handleMouseDown() { if (this.isPaused) this.resumeGame(); }
 }

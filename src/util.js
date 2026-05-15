@@ -1,6 +1,6 @@
 /**
-* 輔助方法：繪製圓角矩形
-*/
+ * Rounded rect for Canvas 2D (used by avatar rendering which stays on 2D ctx).
+ */
 export function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
@@ -15,4 +15,16 @@ export function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
   ctx.closePath();
   if (fill) ctx.fill();
   if (stroke) ctx.stroke();
+}
+
+/**
+ * Rounded rect for Pixi v8 Graphics.
+ */
+export function roundRectGfx(gfx, x, y, width, height, radius, fillColor, strokeColor, strokeWidth = 1) {
+  if (fillColor !== undefined) {
+    gfx.roundRect(x, y, width, height, radius).fill(fillColor);
+  }
+  if (strokeColor !== undefined) {
+    gfx.roundRect(x, y, width, height, radius).stroke({ color: strokeColor, width: strokeWidth });
+  }
 }

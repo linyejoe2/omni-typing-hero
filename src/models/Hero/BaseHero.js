@@ -1,101 +1,68 @@
-import { CONFIG } from "../../CONST.js";
+import { Container, Graphics } from 'pixi.js';
+import { CONFIG } from '../../CONST.js';
 
-const rateMultiplier = {
-  VIT: 10,
-  STR: 3,
-  CRI: 0.01,
-  DEF: 0.002,
-  AGI: 0.015
-}
+const rateMultiplier = { VIT: 10, STR: 3, CRI: 0.01, DEF: 0.002, AGI: 0.015 };
 
-export const baseAttribute = {
-  hp: 60,
-  atk: 10,
-  critRate: 0.02,
-  def: 0,
-  mRes: 0,
-  evaRate: 0
-}
+export const baseAttribute = { hp: 60, atk: 10, critRate: 0.02, def: 0, mRes: 0, evaRate: 0 };
 
 export class BaseHero {
   constructor(data) {
-    this.name = data.nickname || "冒險者";
+    this.name = data.nickname || '冒險者';
     this.job = data.job;
-    // this.gender = 'MALE'; // 'MALE' 或 'FEMALE'
-    this.gender = data.gender; // 'MALE' 或 'FEMALE'
+    this.gender = data.gender;
     this.isFemale = this.gender === 'FEMALE';
 
     this.heroInfo = [
-      "「攻守兼備的開拓者，戰場上的穩定核心。」",
-      "職業介紹： 擁有最均衡的體質，適應各種戰鬥環境。無論是新手還是資深冒險者，都能在劍士身上找到完美的節奏感。",
-      "戰鬥風格： 均衡型。擁有穩定的生存能力與不俗的輸出，是容錯率最高的職業。",
-      "初始數值： 體質與防禦適中，攻擊表現穩定。",
-      "推薦人群： 喜歡紮實手感、追求穩定的玩家。",
-    ]
+      '「攻守兼備的開拓者，戰場上的穩定核心。」',
+      '職業介紹： 擁有最均衡的體質，適應各種戰鬥環境。',
+      '戰鬥風格： 均衡型。',
+      '初始數值： 體質與防禦適中，攻擊表現穩定。',
+      '推薦人群： 喜歡紮實手感、追求穩定的玩家。',
+    ];
 
-    // 座標與狀態
     this.x = 150;
     this.y = CONFIG.groundY - 20;
-    this.state = 'IDLE'; // IDLE, ATTACKING, HURT
+    this.state = 'IDLE';
     this.opacity = 1.0;
     this.shakeTime = 0;
 
-    // 根據性別設定像素裝飾色
     this.palette = {
-      primary: "#6c5ce7",      // 深紫 (主色)
-      light: "#a29bfe",        // 淺紫 (高光)
-      dark: "#4834d4",         // 暗紫 (陰影)
-      skin: this.isFemale ? "#ffe0bd" : "#ffcc91",         // 膚色
-      skinShadow: "#ffcd94",   // 膚色陰影
-      eye: "#2d3436",          // 眼睛
-      deco: this.isFemale ? "#ff99cc" : "#99ccff",        // 裝飾紅/寶石
-      hair: this.isFemale ? "#ff99cc" : "#788694"
+      primary: '#6c5ce7',
+      light: '#a29bfe',
+      dark: '#4834d4',
+      skin: this.isFemale ? '#ffe0bd' : '#ffcc91',
+      skinShadow: '#ffcd94',
+      eye: '#2d3436',
+      deco: this.isFemale ? '#ff99cc' : '#99ccff',
+      hair: this.isFemale ? '#ff99cc' : '#788694',
     };
 
-    // 基礎等級資訊
     this.level = data.level || 0;
-    this.points = data.points || 0; // 剩餘可分配點數
-
-    // 基礎屬性 (按照劍客設計 最平衡)
+    this.points = data.points || 0;
     this.baseHpLevel = 3;
     this.baseAtkLevel = 3;
     this.baseCritRateLevel = 3;
     this.baseDefLevel = 3;
     this.baseEvaRateLevel = 3;
 
-    /**
-     * 職業成長率 (Growth Rates)
-     * 這是每個職業的「潛力值」。
-     * 例如法師的 ATK 成長率高，而戰士的 HP 成長率高。
-     */
-    this.growthRates = {
-      hp: 10,      // 每級固定增加的血量
-      atk: 2,      // 每級固定增加的攻擊力
-      crit: 0.01,  // 每級固定增加的爆擊率 (0.5%)
-      def: 0.005,    // 每級固定增加的物防
-      eva: 0.006    // 每級固定增加的閃避率 (0.5%)
-    };
+    this.growthRates = { hp: 10, atk: 2, crit: 0.01, def: 0.005, eva: 0.006 };
 
-    // 2. 玩家手動分配的點數 (決定角色流派：如全敏流、血牛流)
-    this.assignedPoints = data.assignedPoints || {
-      STR: 0, // 力量
-      CRI: 0, // 會心
-      VIT: 0, // 體質
-      DEF: 0, // 防禦
-      AGI: 0  // 敏捷
-    };
+    this.assignedPoints = data.assignedPoints || { STR: 0, CRI: 0, VIT: 0, DEF: 0, AGI: 0 };
 
-    this.onDeath = data.onDeath || (() => { console.warn("BaseHero.onDath() not implemented!") });
+    this.onDeath = data.onDeath || (() => { console.warn('BaseHero.onDeath() not implemented!'); });
 
-    // this.updateFinalStats();
+    // Pixi display objects — hero body + weapon in separate containers
+    this.container = new Container();
+    this.gfx = new Graphics();
 
-    // // 重新計算後，確保當前血量補滿
-    // this.hp = this.maxHp;
+    this.weaponContainer = new Container();
+    this.weaponGfx = new Graphics();
+    this.weaponContainer.addChild(this.weaponGfx);
+
+    this.container.addChild(this.gfx);
+    this.container.addChild(this.weaponContainer);
   }
 
-  /**
-   * 核心公式：最終數值 = 基礎 + (基礎加點 * 加點成長) + (等級 * 職業成長) + (分配點數 * 加點成長)
-   */
   updateFinalStats() {
     this.hp = baseAttribute.hp + (this.baseHpLevel * rateMultiplier.VIT) + (this.level * this.growthRates.hp) + (this.assignedPoints.VIT * rateMultiplier.VIT);
     this.atk = baseAttribute.atk + (this.baseAtkLevel * rateMultiplier.STR) + (this.level * this.growthRates.atk) + (this.assignedPoints.STR * rateMultiplier.STR);
@@ -103,109 +70,68 @@ export class BaseHero {
     this.def = baseAttribute.def + (this.baseDefLevel * rateMultiplier.DEF) + (this.level * this.growthRates.def) + (this.assignedPoints.DEF * rateMultiplier.DEF);
     const rawEva = baseAttribute.evaRate + (this.level * this.growthRates.eva) + (this.assignedPoints.AGI * rateMultiplier.AGI);
     this.evaRate = Math.min(0.8, rawEva);
-
     this.currentHp = this.hp;
   }
 
   takeDamage(monsterAtk) {
-    // 1. 閃避判定
-    if (Math.random() < this.evaRate) {
-      console.log("MISS! 閃避成功");
-      return "MISS";
-    }
-
-    // 2. 減傷判定 (簡單公式：傷害 = 敵攻 * (1 - (我防))
-    let finalDamage = Math.round(monsterAtk * (1 - (this.def)));
-    if (finalDamage < 1) finalDamage = 1; // 保底傷害
-
-    this.currentHp -= finalDamage;
+    if (Math.random() < this.evaRate) return 'MISS';
+    let dmg = Math.round(monsterAtk * (1 - this.def));
+    if (dmg < 1) dmg = 1;
+    this.currentHp -= dmg;
     this.shakeTime = 15;
-
     if (this.currentHp <= 0) this.onDeath();
-    return finalDamage;
+    return dmg;
   }
 
-  /**
-     * 統一攻擊邏輯
-     * @param {number} targetX 目標 X 座標
-     * @param {number} targetY 目標 Y 座標
-     * @returns {Object|null} 回傳產生的投射物或攻擊數據
-     */
   attack(targetX, targetY, FullCrit = false) {
-    // 1. 檢查武器是否準備好 (Cooldown)
     if (!this.weapon || !this.weapon.canAttack()) return null;
-
-    // 2. 計算基礎傷害與爆擊
     let finalDamage = (this.atk * this.weapon.damageMultiplier) + this.weapon.addDamage;
     let isCrit = Math.random() < this.critRate;
     if (FullCrit) isCrit = true;
+    if (isCrit) finalDamage *= 1.5;
 
-    if (isCrit) {
-      finalDamage *= 1.5; // 爆擊 1.5 倍傷害
-      // console.log("💥 CRITICAL HIT!");
-    }
-
-    // 3. 觸發武器攻擊並獲取投射物
-    // 這裡我們把計算好的傷害傳給武器，讓武器產生的 Fireball 帶有正確的數值
-    const projectile = this.weapon.attack(
-      this.x + 20, // 發射起始點微調
-      this.y - 30,
-      targetX,
-      targetY - 30,
-      finalDamage,
-      isCrit
-    );
-
-    // 4. 觸發角色攻擊動作動畫狀態 (可選)
+    const projectile = this.weapon.attack(this.x + 20, this.y - 30, targetX, targetY - 30, finalDamage, isCrit);
     this.state = 'ATTACKING';
     setTimeout(() => { if (this.state === 'ATTACKING') this.state = 'IDLE'; }, 200);
-
     return projectile;
   }
 
   update() {
     if (this.shakeTime > 0) this.shakeTime--;
+    if (this.currentHp <= 0 && this.opacity > 0) this.opacity -= 0.05;
   }
 
-  // 提供給子類別覆寫的繪製基礎
-  draw(ctx) {
-    if (this.currentHp <= 0 && this.opacity > 0) this.opacity -= 0.05;
-
-    ctx.save();
+  draw() {
     let drawX = this.x;
     let drawY = this.y;
-
     if (this.shakeTime > 0) {
       drawX += (Math.random() - 0.5) * 5;
+      drawY += (Math.random() - 0.5) * 5;
     }
 
-    ctx.translate(drawX, drawY);
-    ctx.globalAlpha = this.opacity;
+    this.container.position.set(drawX, drawY);
+    this.container.alpha = this.opacity;
 
-    this.renderHero(ctx); // 呼叫子類別的具體畫法
-
-    ctx.restore();
+    this.gfx.clear();
+    this.weaponGfx.clear();
+    this.renderHero(this.gfx);
   }
 
-  /**
-   * 外部呼叫的統一接口
-   * @param {CanvasRenderingContext2D} ctx 
-   */
-  static renderAvatar(ctx) {
+  renderHero(gfx) {
+    // overridden by subclasses
+  }
+
+  // renderAvatar uses Canvas 2D — unchanged (called on a 2D ctx for panel thumbnails)
+  renderAvatar(ctx) {
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
     ctx.clearRect(0, 0, w, h);
     ctx.imageSmoothingEnabled = false;
-
-    // 臉部
     ctx.fillStyle = '#ffe0bd';
     ctx.fillRect(20, 12, 24, 20);
-    // 眼睛
     ctx.fillStyle = '#000';
     ctx.fillRect(24, 20, 4, 4);
     ctx.fillRect(36, 20, 4, 4);
-
-    // 預設什麼都不畫，或畫一件白襯衫
     ctx.fillStyle = '#fff';
     ctx.fillRect(16, 32, 32, 24);
   }

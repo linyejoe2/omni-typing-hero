@@ -1,37 +1,41 @@
-import { CONFIG } from "../CONST";
+import { Application } from 'pixi.js';
+import { CONFIG } from '../CONST.js';
 
 class CanvasManager {
   constructor() {
-    this.canvases = {};
-    this.contexts = {};
+    this.app = null;
+    this.contexts = {}; // 2D contexts for non-game canvases (avatar, creator)
   }
 
-  // 初始化特定的 Canvas
-  init(ids) {
-    for (const id of ids) {
-      const el = document.getElementById(id);
-      if (!el) return console.error(`Canvas ${id} not found`);
+  async init(ids) {
+    // Game canvas → Pixi takes over
+    const gameCanvas = document.getElementById('gameCanvas');
+    this.app = new Application();
+    await this.app.init({
+      canvas: gameCanvas,
+      width: CONFIG.width,
+      height: CONFIG.height,
+      background: 0x1e1e1e,
+      resolution: 2,
+      antialias: false,
+    });
 
-      this.canvases[id] = el;
+    // Other canvases stay as Canvas 2D
+    for (const id of ids) {
+      if (id === 'gameCanvas') continue;
+      const el = document.getElementById(id);
+      if (!el) { console.error(`Canvas ${id} not found`); continue; }
       this.contexts[id] = el.getContext('2d');
     }
-
-    this.canvases["gameCanvas"].width = CONFIG.width;
-    this.canvases["gameCanvas"].height = CONFIG.height;
   }
 
-  // 獲取 Context
+  /** Returns Pixi app for gameCanvas, 2D ctx for others. */
   get(id) {
+    if (id === 'gameCanvas') return this.app;
     return this.contexts[id];
   }
 
-  // 統一處理 Resize 邏輯
-  resizeAll() {
-    Object.values(this.canvases).forEach(canvas => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    });
-  }
+  getApp() { return this.app; }
 }
 
 export const canvasManager = new CanvasManager();

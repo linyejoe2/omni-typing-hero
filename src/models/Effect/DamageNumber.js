@@ -1,51 +1,62 @@
+import { Text } from 'pixi.js';
+
 export class DamageNumber {
-    constructor(x, y, value, isCrit = false) {
-        this.x = x + (Math.random() - 0.5) * 20; // 稍微隨機偏移，避免數字重疊
-        this.y = y - 20;
-        // this.value = Math.floor(value);
-        this.value = value;
-        this.isCrit = isCrit;
-        
-        this.life = 1.0;         // 生命週期 (1.0 -> 0)
-        this.velocity = -2;      // 向上飄的速度
-        this.opacity = 1.0;
-        
-        // 根據是否爆擊設定樣式
-        this.color = isCrit ? "#ff9900" : "#ffffff";
-        this.strokeStyle = isCrit ? "#ff0000" : "#000000";
-        this.fontSize = isCrit ? 24 * 1.25 : 18; // 爆擊放大 1.25 倍
-        this.fontWeight = isCrit ? "900" : "bold";
+  constructor(x, y, value, isCrit = false) {
+    this.x = x + (Math.random() - 0.5) * 20;
+    this.y = y - 20;
+    this.value = value;
+    this.isCrit = isCrit;
+
+    this.life = 1.0;
+    this.velocity = -2;
+    this.opacity = 1.0;
+
+    const color = isCrit ? '#ff9900' : '#ffffff';
+    const fontSize = isCrit ? 30 : 18;
+
+    this.text = new Text({
+      text: String(value),
+      style: {
+        fontFamily: 'Courier New',
+        fontSize,
+        fontWeight: isCrit ? '900' : 'bold',
+        fill: color,
+        stroke: { color: isCrit ? '#ff0000' : '#000000', width: 3 },
+        align: 'center',
+      },
+    });
+    this.text.anchor.set(0.5, 1);
+    this.text.x = this.x;
+    this.text.y = this.y;
+
+    if (isCrit) {
+      this.critLabel = new Text({
+        text: 'CRITICAL!',
+        style: { fontFamily: 'Arial', fontSize: 12, fontWeight: 'bold', fill: '#ff9900', align: 'center' },
+      });
+      this.critLabel.anchor.set(0.5, 1);
     }
+  }
 
-    update() {
-        this.y += this.velocity; // 向上移動
-        this.velocity *= 0.95;   // 模擬阻力，越飄越慢
-        this.life -= 0.01;       // 存在約 50 幀
-        this.opacity = this.life;
+  update() {
+    this.y += this.velocity;
+    this.velocity *= 0.95;
+    this.life -= 0.01;
+    this.opacity = this.life;
+
+    this.text.x = this.x;
+    this.text.y = this.y;
+    this.text.alpha = this.opacity;
+
+    if (this.critLabel) {
+      this.critLabel.x = this.x;
+      this.critLabel.y = this.y - this.text.style.fontSize;
+      this.critLabel.alpha = this.opacity;
     }
+  }
 
-    draw(ctx) {
-        if (this.life <= 0) return;
-
-        ctx.save();
-        ctx.globalAlpha = this.opacity;
-        ctx.fillStyle = this.color;
-        ctx.strokeStyle = this.strokeStyle; // 加上黑邊，確保在任何背景都看得清楚
-        ctx.lineWidth = 3;
-        ctx.textAlign = "center";
-        ctx.font = `${this.fontWeight} ${this.fontSize}px 'Courier New'`;
-
-        // 繪製描邊
-        ctx.strokeText(this.value, this.x, this.y);
-        // 繪製文字
-        ctx.fillText(this.value, this.x, this.y);
-
-        // 如果是爆擊，加個小裝飾（可選）
-        if (this.isCrit) {
-            ctx.font = "bold 12px Arial";
-            ctx.fillText("CRITICAL!", this.x, this.y - this.fontSize);
-        }
-
-        ctx.restore();
-    }
+  /** Returns all Pixi display objects owned by this damage number. */
+  getDisplayObjects() {
+    return this.critLabel ? [this.text, this.critLabel] : [this.text];
+  }
 }

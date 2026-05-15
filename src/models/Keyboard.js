@@ -1,219 +1,152 @@
-import { CONFIG } from "../CONST.js";
-import { roundRect } from "../util.js";
+import { Container, Graphics, Text } from 'pixi.js';
+import { CONFIG } from '../CONST.js';
+import { roundRectGfx } from '../util.js';
 
 export class Keyboard {
   constructor() {
-    // 1. 儲存按鍵狀態與動畫進度
-    this.keys = {}; // 格式: { 'A': { pressed: false, alpha: 0 } }
-
+    this.keys = {};
     this.rows = [
-      ["ESC", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"], // Row 0
-      ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "Backspace"],       // Row 1
-      ["Tab", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"],       // Row 2
-      ["Caps", "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "Enter"],        // Row 3
-      ["Shift", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "Shift"],          // Row 4
-      ["Ctrl", "Win", "Alt", "Space", "Alt", "FN", "Ctrl"]                         // Row 5
+      ['ESC', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'],
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
+      ['Tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'],
+      ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'", 'Enter'],
+      ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'Shift'],
+      ['Ctrl', 'Win', 'Alt', 'Space', 'Alt', 'FN', 'Ctrl'],
     ];
 
-    this.upperAlphabet = "QWERTYUIOPASDFGHJKLZXCVBNM";
-    this.loserAlphabet = "qwertyuiopasdfghjklzxcvbnm";
+    this.upperAlphabet = 'QWERTYUIOPASDFGHJKLZXCVBNM';
+    this.loserAlphabet = 'qwertyuiopasdfghjklzxcvbnm';
 
     this.shiftMap = {
-      "1": "!", "2": "@", "3": "#", "4": "$", "5": "%",
-      "6": "^", "7": "&", "8": "*", "9": "(", "0": ")",
-      "-": "_", "=": "+", "[": "{", "]": "}", "\\": "|",
-      ";": ":", "'": '"', ",": "<", ".": ">", "/": "?"
+      '1': '!', '2': '@', '3': '#', '4': '$', '5': '%',
+      '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
+      '-': '_', '=': '+', '[': '{', ']': '}', '\\': '|',
+      ';': ':', "'": '"', ',': '<', '.': '>', '/': '?',
     };
+    this.transMap = { Control: 'Ctrl', CapsLock: 'Caps', ' ': 'Space', Escepe: 'ESC' };
 
-    this.transMap = {
-      "Control": "Ctrl",
-      "CapsLock": "Caps",
-      " ": "Space",
-      "Escepe": "ESC",
-    }
-
-    // // 初始化所有字母鍵與特殊鍵
-    const keyList = [
-      // 1. 鍵盤配置：直接拍平 (Row 0 ~ Row 5)
-      ...this.rows.flat(),
-
-      // 2. 大寫字母：拆解為獨立字元
-      ...this.upperAlphabet.split(''),
-
-      // 3. 符號映射：僅提取 Value (例如 !, @, #, $, ...)
-      ...Object.values(this.shiftMap)
-    ];
-    keyList.forEach(char => {
-      this.keys[char] = { pressed: false, animation: 0 };
-    });
+    const keyList = [...this.rows.flat(), ...this.upperAlphabet.split(''), ...Object.values(this.shiftMap)];
+    keyList.forEach(char => { this.keys[char] = { pressed: false, animation: 0 }; });
 
     this.lastKeyPressed = null;
     this.isShift = false;
     this.isCaps = false;
-
-    // 視覺位置 (放在對戰區與鍵盤區中間)
-    this.x = CONFIG.width / 2; // 假設畫布寬 800，置中為 400
+    this.x = CONFIG.width / 2;
     this.y = CONFIG.groundY + 80;
 
-    // 3. 綁定事件監聽
+    // Pixi objects
+    this.container = new Container();
+    this.gfx = new Graphics(); // for key backgrounds / borders
+    this.container.addChild(this.gfx);
+
+    // One Text per unique key label
+    this.keyTextMap = {};
+    const allLabels = new Set(this.rows.flat());
+    allLabels.forEach(char => {
+      const t = new Text({
+        text: char,
+        style: { fontFamily: 'Arial', fontSize: char.length > 1 ? 9 : 13, fontWeight: 'bold', fill: '#ffffff' },
+      });
+      t.anchor.set(0.5, 0.5);
+      this.container.addChild(t);
+      this.keyTextMap[char] = t;
+    });
+
     this.initEventListeners();
   }
 
   initEventListeners() {
     window.addEventListener('keydown', (e) => {
       if (!e.key) return;
-      let key = e.key;
-
+      const key = e.key;
       const displayKey = key in this.transMap ? this.transMap[key] : key;
-
-      if (this.keys[displayKey]) {
-        this.keys[displayKey].pressed = true;
-        this.keys[displayKey].animation = 1.0; // 動態啟動 (1.0 代表 100% 亮度)
-      }
-
-      // 處理 Shift 邏輯
-      if (key === "Shift") {
-        this.isShift = true;
-        return
-      }
-
-      if (key === "Tab") {
-        e.preventDefault();
-        return;
-      }
-
-      if (key === "Alt") {
-        e.preventDefault();
-        return;
-      }
-
-      this.isCaps = e.getModifierState("CapsLock");
-
+      if (this.keys[displayKey]) { this.keys[displayKey].pressed = true; this.keys[displayKey].animation = 1.0; }
+      if (key === 'Shift') { this.isShift = true; return; }
+      if (key === 'Tab') { e.preventDefault(); return; }
+      if (key === 'Alt') { e.preventDefault(); return; }
+      this.isCaps = e.getModifierState('CapsLock');
       const isChar = /^[ -~]+$/.test(key);
-      if (key.length < 1 || isChar || key == "Escape") {
-        if (this.onKeyPress) {
-          this.lastKeyPressed = key;
-          this.onKeyPress(key);
-        }
+      if (key.length < 1 || isChar || key === 'Escape') {
+        if (this.onKeyPress) { this.lastKeyPressed = key; this.onKeyPress(key); }
       }
     });
-
     window.addEventListener('keyup', (e) => {
       if (!e.key) return;
-      const char = e.key;
-
-      if (char === "Shift") {
-        this.isShift = false;
-      }
-      if (this.keys[char]) {
-        this.keys[char].pressed = false;
-      }
+      if (e.key === 'Shift') this.isShift = false;
+      if (this.keys[e.key]) this.keys[e.key].pressed = false;
     });
   }
 
   getDisplayChar(char) {
-    if (!this.isShift && !this.isCaps) return char
-
-    // 處理數字與符號鍵 (僅受 Shift 影響)
-    if (this.isShift && this.shiftMap[char]) {
-      return this.shiftMap[char];
-    }
-
-    // 處理英文字母 (受 Shift 與 CapsLock 共同影響)
+    if (!this.isShift && !this.isCaps) return char;
+    if (this.isShift && this.shiftMap[char]) return this.shiftMap[char];
     if (char.length === 1 && this.loserAlphabet.includes(char)) {
-      // 如果 Shift 和 CapsLock 同時開啟，會「負負得正」變回小寫
-      const shouldUppercase = this.isCaps !== this.isShift;
-      return shouldUppercase ? char.toUpperCase() : char.toLowerCase();
+      return (this.isCaps !== this.isShift) ? char.toUpperCase() : char.toLowerCase();
     }
-
-    // 其他特殊按鍵 (ESC, Space 等) 直接回傳原文字
     return char;
   }
 
-  /**
-   * 更新動畫邏輯 (由 Scene 每一幀呼叫)
-   */
   update() {
-    // 讓按鍵按下的高亮特效隨時間淡出 (每幀減少 0.05)
-    for (let char in this.keys) {
-      if (this.keys[char].animation > 0) {
-        this.keys[char].animation -= 0.05;
-      }
+    for (const char in this.keys) {
+      if (this.keys[char].animation > 0) this.keys[char].animation -= 0.05;
     }
   }
 
-  /**
-   * 繪製虛擬鍵盤
-   * @param {CanvasRenderingContext2D} ctx 
-   */
-  draw(ctx) {
-    ctx.save();
-    ctx.textAlign = "center";
-
+  draw() {
     const keySize = 30;
-    const spacing = 6; // 稍微縮小間距，讓 80% 鍵盤不會太寬
-
-    // 寬度定義表 (以 keySize 為單位的倍數)
+    const spacing = 6;
     const specialWidths = {
-      "Backspace": 2.5, "Tab": 1.5, "Caps": 1.75, "Enter": 2.25, "Shift": 2.75, "Space": 6,
-      "Win": 1.25, "Alt": 1.25, "Ctrl": 1.5, "ESC": 1.25
+      Backspace: 2.5, Tab: 1.5, Caps: 1.75, Enter: 2.25, Shift: 2.75, Space: 6,
+      Win: 1.25, Alt: 1.25, Ctrl: 1.5, ESC: 1.25,
     };
 
+    this.gfx.clear();
+
+    // Hide all key texts first, then show/position used ones
+    Object.values(this.keyTextMap).forEach(t => { t.visible = false; });
+
     this.rows.forEach((row, rIdx) => {
-      // --- 步驟 A: 先計算這一行總寬度 (用於置中) ---
       let totalRowWidth = 0;
-      row.forEach(char => {
-        const wMult = specialWidths[char] || 1;
-        totalRowWidth += (keySize * wMult) + spacing;
-      });
-      totalRowWidth -= spacing; // 扣掉最後一個間距
+      row.forEach(char => { totalRowWidth += (keySize * (specialWidths[char] || 1)) + spacing; });
+      totalRowWidth -= spacing;
 
-      let currentX = this.x - (totalRowWidth / 2);
-
-      // F1-F12 那一行跟下面拉開一點距離
-      // const yGap = (rIdx === 0) ? 15 : 0;
+      let currentX = this.x - totalRowWidth / 2;
       const y = this.y + rIdx * (keySize + spacing);
 
-      row.forEach(char => {
-        char = this.getDisplayChar(char);
-
-        const wMult = specialWidths[char] || 1;
+      row.forEach(rawChar => {
+        const char = this.getDisplayChar(rawChar);
+        const wMult = specialWidths[char] || specialWidths[rawChar] || 1;
         const currentW = keySize * wMult;
         const keyState = this.keys[char] || { animation: 0, pressed: false };
 
-        // --- 1. 繪製背景 ---
-        ctx.fillStyle = "#1a1a1a";
-        // 如果是 CapsLock 且正在作用中，變色
-        if (char === "Caps" && this.isCaps) ctx.fillStyle = "#ff4500";
+        // Background
+        let bgColor = '#1a1a1a';
+        if (char === 'Caps' && this.isCaps) bgColor = '#ff4500';
+        roundRectGfx(this.gfx, currentX, y, currentW, keySize, 4, bgColor);
 
-        roundRect(ctx, currentX, y, currentW, keySize, 4, true, false);
-
-        // --- 2. 繪製動畫高亮層 ---
+        // Highlight layer
         if (keyState.animation > 0) {
-          ctx.fillStyle = `rgba(255, 69, 0, ${keyState.animation})`;
-          roundRect(ctx, currentX, y, currentW, keySize, 4, true, false);
+          roundRectGfx(this.gfx, currentX, y, currentW, keySize, 4, { color: '#ff4500', alpha: keyState.animation });
         }
 
-        // --- 3. 繪製外框 ---
-        ctx.strokeStyle = "#8b0000";
-        ctx.lineWidth = 1;
-        roundRect(ctx, currentX, y, currentW, keySize, 4, false, true);
-        ctx.strokeStyle = `rgba(255, 255, 255, ${keyState.animation})`;
-        ctx.lineWidth = 2;
-        roundRect(ctx, currentX, y, currentW, keySize, 4, false, true);
+        // Border
+        roundRectGfx(this.gfx, currentX, y, currentW, keySize, 4, undefined, '#8b0000', 1);
+        if (keyState.animation > 0) {
+          roundRectGfx(this.gfx, currentX, y, currentW, keySize, 4, undefined, '#ffffff', 2);
+        }
 
-        // --- 4. 繪製文字 ---
-        ctx.fillStyle = "#fff";
-        // 根據鍵位大小縮放字體
-        const fontSize = char.length > 1 ? 10 : 14;
-        ctx.font = `bold ${fontSize}px Arial`;
-        ctx.fillText(char, currentX + currentW / 2, y + keySize / 2 + 5);
+        // Key label text
+        const textKey = this.keyTextMap[rawChar];
+        if (textKey) {
+          textKey.visible = true;
+          textKey.x = currentX + currentW / 2;
+          textKey.y = y + keySize / 2;
+          textKey.text = char;
+          textKey.style.fontSize = char.length > 1 ? 9 : 13;
+        }
 
-        // 累加 X 座標
         currentX += currentW + spacing;
       });
     });
-
-    ctx.restore();
   }
 }
